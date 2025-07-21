@@ -1,0 +1,24 @@
+#' Barro Colorado Island (BCI) dataset
+#'
+#' The Barro Colorado Island (BCI) dataset contains comprehensive ecological data from the 50-hectare forest dynamics plot on Barro Colorado Island, Panama. This dataset includes phylogenetic information and community composition data for tropical forest species.
+#'
+#' @format A list containing four main components:
+#' \describe{
+#'   \item{splist}{A data frame with species information including species names, genus, and family classifications.}
+#'   \item{phy_species}{A phylogenetic tree representing species-level evolutionary relationships, rooted and including branch lengths.}
+#'   \item{phy_genus}{A phylogenetic tree with 183 tips and 174 internal nodes, rooted and including branch lengths.}
+#'   \item{com}{A community matrix showing species abundance across different sampling plots, with species counts for each location.}
+#' }
+#' @source
+#' Barro Colorado Island (BCI) (\url{https://forestgeo.si.edu/sites/neotropics/barro-colorado-island})
+#'
+#' @references
+#' Condit, R., Pérez, R., Aguilar, S., Lao, S., Foster, R., & Hubbell, S. P. (2019).
+#' Complete data from the Barro Colorado 50-ha plot: 423617 trees, 35 years, 2019 version.
+#' Dryad Digital Repository. \url{https://doi.org/10.15146/5xcp-0d46}
+#'
+#' @examples
+#' # Load the dataset
+#' data(BCI)
+#'
+"BCI"

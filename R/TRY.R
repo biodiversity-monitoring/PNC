@@ -1,0 +1,76 @@
+#' TRY Plant Trait Database
+#'
+#' A comprehensive global database of plant functional traits from the TRY initiative.
+#' This dataset contains standardized measurements of key plant functional traits
+#' across multiple species, genera, and families.
+#'
+#' @format A data frame with 58,964 rows and 23 variables:
+#' \describe{
+#'   \item{species}{Character. Species name}
+#'   \item{genus}{Character. Genus name}
+#'   \item{family}{Character. Family name}
+#'   \item{DispersalUnitLength}{Numeric. Dispersal unit length, mm. (TraitID: 237)}
+#'   \item{LA}{Numeric. Leaf area (in case of compound leaves: leaflet, undefined if petiole is in- or excluded), mm2. (TraitID: 3113)}
+#'   \item{LDMC}{Numeric. Leaf dry mass per leaf fresh mass (leaf dry matter content, LDMC), g/g. (TraitID: 47)}
+#'   \item{LeafC}{Numeric. Leaf carbon (C) content per leaf dry mass, mg/g. (TraitID: 13)}
+#'   \item{LeafN}{Numeric. Leaf nitrogen (N) content per leaf dry mass, mg/g. (TraitID: 14)}
+#'   \item{LeafNPratio}{Numeric. Leaf nitrogen/phosphorus (N/P) ratio, g/g. (TraitID: 56)}
+#'   \item{LeafNperArea}{Numeric. Leaf nitrogen (N) content per leaf area, g m-2. (TraitID: 50)}
+#'   \item{LeafP}{Numeric. Leaf phosphorus (P) content per leaf dry mass, mg/g. (TraitID: 15)}
+#'   \item{Leafdelta15N}{Numeric. Leaf nitrogen (N) isotope signature (delta 15N), per mill. (TraitID: 78)}
+#'   \item{Leaffreshmass}{Numeric. Leaf fresh mass, g. (TraitID: 163)}
+#'   \item{LMA}{Numeric. Leaf mass per area. (1/SLA)}
+#'   \item{PlantHeight}{Numeric. Plant height vegetative, m. (TraitID: 3106)}
+#'   \item{RootingDepth}{Numeric. Root rooting depth, m. (TraitID: 6)}
+#'   \item{SeedLength}{Numeric. Seed length, mm. (TraitID: 27)}
+#'   \item{SeedMass}{Numeric. Seed dry mass, mg. (TraitID: 26)}
+#'   \item{SeedNumber}{Numeric. Seed number per reproduction unit, number. (TraitID: 138)}
+#'   \item{SLA}{Numeric. Leaf area per leaf dry mass (specific leaf area, SLA or 1/LMA): petiole excluded, mm2 mg-1. (TraitID: 3115)}
+#'   \item{SSD}{Numeric. Stem specific density (SSD, stem dry mass per stem fresh volume) or wood density, g/cm3. (TraitID: 4)}
+#'   \item{StemConduitDensity}{Numeric. Stem conduit density (vessels and tracheids), mm-2. (TraitID: 169)}
+#'   \item{WoodVesselLength}{Numeric. Wood vessel element length; stem conduit (vessel and tracheids) element length, micro m. (TraitID: 282)}
+#' }
+#'
+#' @details
+#' The TRY database represents a global effort to compile plant functional trait data
+#' from multiple sources and research groups. Plant functional traits are morphological,
+#' physiological, and phenological characteristics that influence fitness and ecosystem
+#' functioning. This dataset includes key traits related to:
+#' \itemize{
+#'   \item Leaf economics (SLA, LDMC, leaf nutrients)
+#'   \item Plant architecture (height, rooting depth)
+#'   \item Reproductive strategy (seed mass, seed number)
+#'   \item Wood anatomy (vessel length, conduit density)
+#'   \item Chemical composition (C, N, P content)
+#' }
+#'
+#' Missing values (NA) are common in trait databases due to the difficulty of
+#' measuring all traits for all species.
+#'
+#' @source TRY Plant Trait Database (\url{https://www.try-db.org/})
+#'
+#' @references
+#' Kattge, J., Bönisch, G., Díaz, S., et al. (2020). TRY plant trait database –
+#' enhanced coverage and open access. Global Change Biology, 26(1), 119-188. \url{https://doi.org/10.1111/gcb.14904}
+#'
+#' @examples
+#' # Load the dataset
+#' data(TRY)
+#'
+"TRY"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
