@@ -115,6 +115,9 @@ pnc <- function(trait_data, phylo_tree,
                 sig_levels = c(0.001, 0.01, 0.05),
                 reps = 999,
                 verbose = TRUE) {
+  if (!is.data.frame(trait_data) && !is.matrix(trait_data)) {
+    stop("The trait_data must be a data frame or a matrix!")
+  }
   required_packages <- c("phylobase", "phylosignal", "ape")
   for (pkg in required_packages) {
     if (!base::requireNamespace(pkg, quietly = TRUE)) {

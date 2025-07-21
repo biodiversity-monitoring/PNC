@@ -17,6 +17,6 @@
 
 ## PNC workflow
 
-![](man/figures/Figure%201.jpg)
+![](man/figures/Figure1.jpg)
 
 Work in progress...
