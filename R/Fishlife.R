@@ -1,0 +1,41 @@
+#' Fishlife Dataset
+#'
+#' @description
+#' A comprehensive dataset of fish life history traits across multiple species,
+#' compiled by Thorson et al. (2023). The dataset provides various morphological,
+#' ecological, and biological characteristics of fish species.
+#'
+#' @format A data frame with multiple variables:
+#' \describe{
+#'   \item{species}{Scientific species name}
+#'   \item{genus}{Genus of the fish species}
+#'   \item{family}{Family classification}
+#'   \item{age_max}{Maximum age of the species}
+#'   \item{trophic_level}{Trophic level in the ecosystem}
+#'   \item{aspect_ratio}{Body aspect ratio}
+#'   \item{fecundity}{Reproductive capacity}
+#'   \item{growth_coefficient}{Growth rate parameter}
+#'   \item{temperature}{Optimal temperature range}
+#'   \item{length_max}{Maximum body length}
+#'   \item{length_infinity}{Theoretical maximum length}
+#'   \item{length_maturity}{Length at sexual maturity}
+#'   \item{age_maturity}{Age at sexual maturity}
+#'   \item{natural_mortality}{Natural mortality rate}
+#'   \item{weight_infinity}{Theoretical maximum weight}
+#'   \item{max_body_depth}{Maximum body depth}
+#'   \item{max_body_width}{Maximum body width}
+#'   \item{lower_jaw_length}{Length of lower jaw}
+#'   \item{min_caudal_pedoncule_depth}{Minimum caudal peduncle depth}
+#'   \item{offspring_size}{Size of offspring}
+#' }
+#'
+#' @references
+#' Thorson, J. T., et al. (2023). Identifying direct and indirect
+#' associations among traits by merging phylogenetic comparative methods
+#' and structural equation models. Methods in Ecology and Evolution,
+#' 14, 1259–1275. \url{https://doi.org/10.1111/2041-210X.14076}
+#'
+#' @examples
+#' data(Fishlife)
+#' head(Fishlife)
+"Fishlife"

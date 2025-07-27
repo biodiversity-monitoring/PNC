@@ -22,7 +22,7 @@ test_that("pnc function works correctly", {
   )
 
   # Test 1: Basic functionality with default parameters
-  result_basic <- pnc(test_traits, test_tree)
+  result_basic <- pnc(test_traits, test_tree, verbose = FALSE)
 
   expect_s3_class(result_basic, "data.frame")
   expect_true(all(c("trait", "coverage", "n_sp", "signal", "p", "significance", "method") %in% colnames(result_basic)))
@@ -30,26 +30,26 @@ test_that("pnc function works correctly", {
   expect_equal(attr(result_basic, "pca_axes"), c("PC1", "PC2"))
 
   # Test 2: Multiple methods specified
-  result_multi <- pnc(test_traits, test_tree, methods = c("Lambda", "K", "I"))
+  result_multi <- pnc(test_traits, test_tree, methods = c("Lambda", "K", "I"), verbose = FALSE)
 
   expect_true(nrow(result_multi) > nrow(result_basic))
   expect_true(all(c("Lambda", "K", "I") %in% result_multi$method))
   expect_equal(attr(result_multi, "methods"), c("Lambda", "K", "I"))
 
   # Test 3: No PCA analysis
-  result_no_pca <- pnc(test_traits, test_tree, pca_axes = NULL)
+  result_no_pca <- pnc(test_traits, test_tree, pca_axes = NULL, verbose = FALSE)
 
   expect_false(any(grepl("PC", result_no_pca$trait)))
   expect_null(attr(result_no_pca, "pca_results"))
 
   # Test 4: Custom significance levels
   custom_sig <- c(0.001, 0.01, 0.05, 0.1)
-  result_custom_sig <- pnc(test_traits, test_tree, sig_levels = custom_sig)
+  result_custom_sig <- pnc(test_traits, test_tree, sig_levels = custom_sig, verbose = FALSE)
 
   expect_equal(attr(result_custom_sig, "sig_levels"), custom_sig)
 
   # Test 5: Custom number of repetitions
-  result_custom_reps <- pnc(test_traits, test_tree, reps = 99)
+  result_custom_reps <- pnc(test_traits, test_tree, reps = 99, verbose = FALSE)
 
   expect_equal(attr(result_custom_reps, "reps"), 99)
 

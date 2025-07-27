@@ -1,0 +1,61 @@
+#' COMBINE Mammal Trait Database
+#'
+#' @description
+#' A comprehensive dataset of mammalian traits compiled from multiple sources,
+#' providing detailed ecological and biological information for various mammal species.
+#'
+#' @format A data frame with the following columns:
+#' \describe{
+#'   \item{species}{Species name}
+#'   \item{genus}{Genus name}
+#'   \item{family}{Taxonomic family}
+#'   \item{adult_mass_g}{Body mass of an adult individual in grams}
+#'   \item{adult_brain_mass_g}{Weight of the brain of an adult individual in grams}
+#'   \item{adult_body_length_mm}{Total length from tip of the nose to anus or base of the tail of an adult individual in millimeters}
+#'   \item{adult_forearm_length_mm}{Total length from elbow to wrist of an adult individual in millimeters, specific to order Chiroptera}
+#'   \item{max_longevity_d}{Maximum reported age at death for the species in days}
+#'   \item{maturity_d}{The amount of time needed to reach sexual maturity in days}
+#'   \item{female_maturity_d}{The amount of time needed for a female to reach sexual maturity in days}
+#'   \item{male_maturity_d}{Age at which females give birth to their first litter or their young attach to teats in days}
+#'   \item{age_first_reproduction_d}{Age at first reproduction in days}
+#'   \item{gestation_length_d}{Length of time of fetal growth in days}
+#'   \item{teat_number_n}{Total number of teats present in an individual of the species}
+#'   \item{litter_size_n}{Number of offspring born per litter per female}
+#'   \item{litters_per_year_n}{Number of litters per female per year}
+#'   \item{interbirth_interval_d}{Time between reproduction events in days}
+#'   \item{neonate_mass_g}{Weight of an individual at birth in grams}
+#'   \item{weaning_age_d}{Age at which primary nutritional dependency on the mother ends and independent foraging begins in days}
+#'   \item{weaning_mass_g}{Weight at weaning in grams}
+#'   \item{generation_length_d}{Average age of parents of the current cohort in days}
+#'   \item{dispersal_km}{The distance an animal travels between its place of birth to the place where it reproduces in kilometers}
+#'   \item{density_n_km2}{Number of individuals of the species per squared kilometer}
+#'   \item{home_range_km2}{Size of the area within which everyday activities of individuals or groups of individuals are typically restricted in km2}
+#'   \item{social_group_n}{Number of individuals in a group that spends most of their daily time together}
+#'   \item{dphy_invertebrate}{Percentage of the diet composed of invertebrates}
+#'   \item{dphy_vertebrate}{Percentage of the diet composed of vertebrates}
+#'   \item{dphy_plant}{Percentage of the diet composed of plants and/or fungi}
+#'   \item{det_inv}{Percentage of the diet composed of invertebrates}
+#'   \item{det_vend}{Percentage of the diet composed of mammals, birds}
+#'   \item{det_vect}{Percentage of the diet composed of reptiles, snakes, amphibians, salamanders}
+#'   \item{det_vfish}{Percentage of the diet composed of fish}
+#'   \item{det_vunk}{Percentage of the diet composed of vertebrates – general or unknown}
+#'   \item{det_scav}{Percentage of the diet composed of scavenge, garbage, offal, carcasses, trawlers, carrion}
+#'   \item{det_fruit}{Percentage of the diet composed of fruit, drupes}
+#'   \item{det_nect}{Percentage of the diet composed of nectar, pollen, plant exudates, gums}
+#'   \item{det_seed}{Percentage of the diet composed of seed, maize, nuts, spores, wheat, grains}
+#'   \item{det_plantother}{Percentage of the diet composed of other plant elements}
+#'   \item{det_diet_breadth_n}{Number of prevalent EltonTraits dietary categories consumed at 20 percent or more}
+#'   \item{upper_elevation_m}{Upper elevation limit at which the species can be found in meters}
+#'   \item{lower_elevation_m}{Lower elevation limit at which the species can be found in meters}
+#'   \item{altitude_breadth_m}{Difference between the upper and lower elevation limits of a species in meters}
+#'   \item{habitat_breadth_n}{Number of distinct suitable level 1 IUCN habitats}
+#' }
+#'
+#' @references
+#' Soria, C. D., M. Pacifici, M. Di Marco, S. M. Stephen, and C. Rondinini. (2021)
+#' COMBINE: a coalesced mammal database of intrinsic and extrinsic traits.
+#' Ecology 102(6):e03344. \url{https://doi.org/10.1002/ecy.3344}
+#' @examples
+#' data(COMBINE_mammal)
+#' summary(COMBINE_mammal)
+"COMBINE_mammal"

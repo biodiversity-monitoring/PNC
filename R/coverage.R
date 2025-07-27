@@ -72,11 +72,3 @@ coverage <- function(data) {
   return(trait_summary)
 }
 
-
-
-
-
-
-
-
-
