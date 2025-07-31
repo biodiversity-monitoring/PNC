@@ -16,7 +16,7 @@ RoxygenNote: 7.3.2
 Suggests: testthat (>= 3.0.0)
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2025-07-31 11:49:58 UTC; Administrator
+Packaged: 2025-07-31 12:19:39 UTC; Administrator
 Author: Yan He [aut, cre],
   Yu Xia [aut],
   Rui Yang [aut],

@@ -82,9 +82,9 @@ compnc <- function(com, trait_data, phylo_tree,
   if (!is.data.frame(trait_data) && !is.matrix(trait_data)) {
     stop("The trait_data must be a data frame or a matrix!")
   }
-  if (any(is.na(trait_data)) && verbose) {
-    warning(paste0("Trait dataset contains NA values."))
-  }
+  #if (any(is.na(trait_data)) && verbose) {
+  #  warning(paste0("Trait dataset contains NA values."))
+  #}
   required_packages <- c("phylobase", "phylosignal", "ape")
   for (pkg in required_packages) {
     if (!base::requireNamespace(pkg, quietly = TRUE)) {
