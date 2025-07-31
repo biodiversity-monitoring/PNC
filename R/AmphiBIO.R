@@ -25,9 +25,7 @@
 #' }
 #'
 #' @references
-#' Oliveira, B., São-Pedro, V., Santos-Barrera, G. et al. (2017)
-#' AmphiBIO, a global database for amphibian ecological traits.
-#' Scientific Data 4, 170123
+#' Oliveira, B. F., São-Pedro, V. A., Santos-Barrera, G., Penone, C., & Costa, G. C. (2017). AmphiBIO, a global database for amphibian ecological traits. Scientific data, 4(1), 1-7.
 #' \url{https://doi.org/10.1038/sdata.2017.123}
 #'
 #' @examples

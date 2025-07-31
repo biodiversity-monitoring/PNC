@@ -25,6 +25,7 @@ The Barro Colorado Island (BCI) dataset contains comprehensive ecological data f
 \examples{
 # Load the dataset
 data(BCI)
+head(BCI)
 
 }
 \references{

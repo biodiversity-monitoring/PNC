@@ -1,4 +1,4 @@
-#' COMBINE Mammal Trait Database
+#' COMBINE: Mammal Trait Database
 #'
 #' @description
 #' A comprehensive dataset of mammalian traits compiled from multiple sources,
@@ -52,10 +52,10 @@
 #' }
 #'
 #' @references
-#' Soria, C. D., M. Pacifici, M. Di Marco, S. M. Stephen, and C. Rondinini. (2021)
+#' Soria, C. D., M. Pacifici, M. Di Marco, S. M. Stephen, and C. Rondinini. (2021).
 #' COMBINE: a coalesced mammal database of intrinsic and extrinsic traits.
-#' Ecology 102(6):e03344. \url{https://doi.org/10.1002/ecy.3344}
+#' Ecology, 102(6):e03344. \url{https://doi.org/10.1002/ecy.3344}
 #' @examples
-#' data(COMBINE_mammal)
-#' summary(COMBINE_mammal)
-"COMBINE_mammal"
+#' data(COMBINE)
+#' head(COMBINE)
+"COMBINE"

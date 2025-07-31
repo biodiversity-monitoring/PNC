@@ -47,9 +47,7 @@ head(AVONET)
 
 }
 \references{
-Tobias, J.A., Sheard, C., Pigot, A.L., et al. (2022)
-AVONET: morphological, ecological and geographical data for all birds.
-Ecology Letters, 25, 581–597.
+Tobias, J. A., Sheard, C., Pigot, A. L., Devenish, A. J. M., Yang, J., Sayol, F., Neate-Clegg, M. H. C., Alioravainen, N., Weeks, T. L., Barber, R. A., Walkden, P. A., MacGregor, H. E. A., Jones, S. E. I., Vincent, C., Phillips, A. G., Marples, N. M., Montaño-Centellas, F. A., Leandro-Silva, V., Claramunt, S., Darski, B., et al. (2022). AVONET: morphological, ecological and geographical data for all birds. Ecology Letters, 25(3), 581-597.
 \url{https://doi.org/10.1111/ele.13898}
 }
 \keyword{datasets}

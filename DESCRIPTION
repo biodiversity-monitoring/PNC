@@ -3,7 +3,7 @@ Type: Package
 Title: Phylogenetic Niche Conservatism Analysis for Ecological
         Communities
 Version: 0.1.0
-Date: 2025-7-27
+Date: 2025-7-31
 Authors@R: c(person(given = "Yan", family = "He", email = "heyan@njfu.edu.cn", role = c("aut", "cre")),person(given = "Yu", family = "Xia", role = "aut"),person(given = "Rui", family = "Yang", role = "aut"),person(given = "Lingfeng", family = "Mao", role = "aut"))
 Maintainer: Yan He <heyan@njfu.edu.cn>
 Description: Provides comprehensive tools for analyzing phylogenetic niche conservatism in ecological communities. The package implements multiple statistical methods (Pagel's Lambda, Blomberg's K, Moran's I, and others) to quantify phylogenetic signal in species trait data across single or multiple communities. Methods are described in Münkemüller et al. (2012) <doi:10.1111/j.2041-210X.2012.00196.x> and Keck et al. (2016) <doi:10.1002/ece3.2051>.
@@ -16,7 +16,7 @@ RoxygenNote: 7.3.2
 Suggests: testthat (>= 3.0.0)
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2025-07-27 13:22:12 UTC; Administrator
+Packaged: 2025-07-31 11:49:58 UTC; Administrator
 Author: Yan He [aut, cre],
   Yu Xia [aut],
   Rui Yang [aut],

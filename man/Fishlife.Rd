@@ -42,9 +42,7 @@ data(Fishlife)
 head(Fishlife)
 }
 \references{
-Thorson, J. T., et al. (2023). Identifying direct and indirect
-associations among traits by merging phylogenetic comparative methods
-and structural equation models. Methods in Ecology and Evolution,
-14, 1259–1275. \url{https://doi.org/10.1111/2041-210X.14076}
+Thorson, J. T., Maureaud, A. A., Frelat, R., Mérigot, B., Bigman, J. S., Friedman, S. T., Palomares, M. L. D., Pinsky, M. L., Price, S. A., & Wainwright, P. (2023). Identifying direct and indirect associations among traits by merging phylogenetic comparative methods and structural equation models. Methods in Ecology and Evolution, 14(5), 1243-1255.
+ \url{https://doi.org/10.1111/2041-210X.14076}
 }
 \keyword{datasets}

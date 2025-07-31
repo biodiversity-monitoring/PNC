@@ -20,5 +20,6 @@
 #' @examples
 #' # Load the dataset
 #' data(BCI)
+#' head(BCI)
 #'
 "BCI"
