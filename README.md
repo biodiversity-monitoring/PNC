@@ -18,11 +18,11 @@
 ## Main functions of PNC and their descriptions
 
 | Name                     | Type     | Description                                                                                                                                                                                                                                                                         |
-|--------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|----------|----------|-----------------------------------------------------|
 | **AmphiBIO**             | Database | A comprehensive global database of amphibian natural history traits. It provides 12 continuous traits related to ecology, morphology, and reproduction for over 6,500 species across all orders (Anura, Caudata, Gymnophiona), 61 families, and 531 genera (Oliveira et al., 2017). |
 | **AVONET**               | Database | A comprehensive trait database for extant avian species, providing detailed morphological information through 11 continuous traits covering 11,009 bird species worldwide (Tobias et al., 2022).                                                                                    |
 | **BCI**                  | Database | A 50-hectare forest ecosystem dataset from Barro Colorado Island, comprising comprehensive species inventories, phylogenetic trees at species and genus levels, and community composition matrices (Condit et al., 2019).                                                           |
-| \*\* COMBINE\*\*         | Database | An integrated mammalian trait database consolidating 40 continuous morphological and ecological traits for 6,234 extant and recently extinct mammal species (Soria et al., 2021).                                                                                                   |
+| **COMBINE**        | Database | An integrated mammalian trait database consolidating 40 continuous morphological and ecological traits for 6,234 extant and recently extinct mammal species (Soria et al., 2021).                                                                                                   |
 | **Fishlife**             | Database | A comprehensive compilation of life-history traits for described fish species (Chondrichthyes and Osteichthyes), featuring 17 continuous traits with at least one measurement for 26,622 species (Thorson et al., 2023).                                                            |
 | **HimalayanBirds**       | Database | A dataset providing information on bird species in the Himalayas, including species names, phylogenetic relationships, and community composition across elevation bands (Ding et al., 2021).                                                                                        |
 | **ReptTraits**           | Database | A comprehensive reptilian trait dataset comprising 8 continuous morphological and ecological traits across 12,060 species spanning major reptilian clades (Crocodylia, Testudines, Rhynchocephalia, Amphisbaenia, Sauria, and Serpentes) (Oskyrko et al., 2024).                    |
@@ -47,7 +47,9 @@ Ding, Z., Hu, H., Cadotte, M.W., Liang, J., Hu, Y., & Si, X. (2021). Elevational
 
 Kattge, J., Bönisch, G., Díaz, S., Lavorel, S., Prentice, I. C., Leadley, P., Tautenhahn, S., Werner, G. D. A., Aakala, T., Abedi, M., Acosta, A. T. R., Adamidis, G. C., Adamson, K., Aiba, M., Albert, C. H., Alcántara, J. M., Alcázar C, C., Aleixo, I., Ali, H., Amiaud, B., et al. (2020). TRY plant trait database -- enhanced coverage and open access. Global Change Biology, 26(1), 43-60. <https://doi.org/10.1111/gcb.14904>
 
-Oliveira, B. F., São-Pedro, V. A., Santos-Barrera, G., Penone, C., & Costa, G. C. (2017). AmphiBIO, a global database for amphibian ecological traits. Scientific data, 4(1), 1-7. <https://doi.org/10.1038/sdata.2017.123> Oskyrko, O., Mi, C., Meiri, S., & Du, W. (2024). ReptTraits: a comprehensive dataset of ecological traits in reptiles. Scientific Data, 11(1), 243. <https://doi.org/10.1038/s41597-024-03079-5>
+Oliveira, B. F., São-Pedro, V. A., Santos-Barrera, G., Penone, C., & Costa, G. C. (2017). AmphiBIO, a global database for amphibian ecological traits. Scientific data, 4(1), 1-7. <https://doi.org/10.1038/sdata.2017.123> 
+
+Oskyrko, O., Mi, C., Meiri, S., & Du, W. (2024). ReptTraits: a comprehensive dataset of ecological traits in reptiles. Scientific Data, 11(1), 243. <https://doi.org/10.1038/s41597-024-03079-5>
 
 Soria, C. D., Pacifici, M., Di Marco, M., Stephen, S. M., & Rondinini, C. (2021). COMBINE: a coalesced mammal database of intrinsic and extrinsic traits. Ecology, 102(6),e03344
 
