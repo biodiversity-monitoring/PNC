@@ -10,23 +10,23 @@
 #'   \item{species}{Scientific species name}
 #'   \item{genus}{Genus of the fish species}
 #'   \item{family}{Family classification}
-#'   \item{age_max}{Maximum age of the species}
-#'   \item{trophic_level}{Trophic level in the ecosystem}
-#'   \item{aspect_ratio}{Body aspect ratio}
-#'   \item{fecundity}{Reproductive capacity}
-#'   \item{growth_coefficient}{Growth rate parameter}
-#'   \item{temperature}{Optimal temperature range}
-#'   \item{length_max}{Maximum body length}
-#'   \item{length_infinity}{Theoretical maximum length}
-#'   \item{length_maturity}{Length at sexual maturity}
-#'   \item{age_maturity}{Age at sexual maturity}
-#'   \item{natural_mortality}{Natural mortality rate}
-#'   \item{weight_infinity}{Theoretical maximum weight}
-#'   \item{max_body_depth}{Maximum body depth}
-#'   \item{max_body_width}{Maximum body width}
-#'   \item{lower_jaw_length}{Length of lower jaw}
-#'   \item{min_caudal_pedoncule_depth}{Minimum caudal peduncle depth}
-#'   \item{offspring_size}{Size of offspring}
+#'   \item{age_max}{Maximum age, years}
+#'   \item{trophic_level}{Trophic level, where 1 is primary producers, etc., dimensionless}
+#'   \item{aspect_ratio}{Caudal fin height and length divided by area, dimensionless}
+#'   \item{fecundity}{Annual eggs produced, number/year}
+#'   \item{growth_coefficient}{von Bertalannffy growth coefficient, year-1}
+#'   \item{temperature}{Average temperature from portion of population sampled, celcius}
+#'   \item{length_max}{maximum length, cm}
+#'   \item{length_infinity}{von Bertalanffy asymptotic maximum length, cm}
+#'   \item{length_maturity}{Length at 50\% maturity, cm}
+#'   \item{age_maturity}{Age at 50\% sexual maturity, years}
+#'   \item{natural_mortality}{Natural mortality rate M, year-1}
+#'   \item{weight_infinity}{Asymptotic maximum weight, g}
+#'   \item{max_body_depth}{Maximum body depth, cm}
+#'   \item{max_body_width}{Maximum body width, cm}
+#'   \item{lower_jaw_length}{Length of lower jaw, cm}
+#'   \item{min_caudal_pedoncule_depth}{Depth of caudal pedoncule, connecting caudal fin to body}
+#'   \item{offspring_size}{Size of offspring, kg}
 #' }
 #'
 #' @references

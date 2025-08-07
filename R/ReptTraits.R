@@ -11,12 +11,16 @@
 #'   \item{family}{Family name}
 #'   \item{Minimal_elevation}{Minimum elevation where the species was observed (meters above sea level)}
 #'   \item{Maximum_elevation}{Maximum elevation where the species was observed (meters above sea level)}
+#'   \item{Mean_Annual_Temperature}{Mean annual temperature,°C}
+#'   \item{Temperature_Seasonality}{Temperature seasonality, standard deviation × 100}
 #'   \item{Seasonality_Precipitation}{Seasonal precipitation information}
+#'   \item{Maximum_Longevity}{Longevity data are the maximum age reported for each species from the literature, years}
 #'   \item{Maximum_body_mass}{Maximum body mass of the species (grams)}
 #'   \item{Maximum_length}{Maximum length ("SVL", mm)/straight carapace length for turtles ("SCL", mm)}
 #'   \item{Mean_number_of_offspring}{Mean number of offspring or eggs per clutch}
 #'   \item{Smallest_clutch_size}{Minimum clutch/litter size}
 #'   \item{Largest_clutch_size}{Maximum clutch/litter size}
+#'   \item{Mean_Tb}{The mean reported mean body temperatures of animal, °C}
 #' }
 #'
 #' @references
