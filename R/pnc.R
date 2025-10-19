@@ -1,84 +1,20 @@
-#' Calculate Phylogenetic Niche Conservatism for Single Community Analysis
+#' Analyze Phylogenetic Niche Conservatism in Ecological Communities
 #'
-#' This function performs in-depth phylogenetic niche conservatism analysis for individual
+#' This function performs in-depth phylogenetic niche conservatism analysis for
 #' communities by quantifying phylogenetic signal in trait data using multiple statistical methods.
 #' The function integrates trait data preprocessing, phylogenetic tree manipulation,
-#' optional principal component analysis, and robust statistical testing to provide
-#' detailed insights into evolutionary constraints on niche occupation patterns.
+#' optional principal component analysis, and robust statistical testing to provide detailed insights
+#' into evolutionary constraints on trait evolution.
 #'
-#' @param trait_data A data frame containing trait data with species as rows and traits as columns.
-#'   Row names should correspond to species names that match the phylogenetic tree tip labels.
-#' @param phylo_tree A phylogenetic tree object of class "phylo".
-#'   Tip labels should match the species names in trait_data row names.
-#' @param methods A character vector specifying which phylogenetic signal methods to use.
-#'   Available options are: "Lambda", "K", "K.star", "I", "Cmean".
-#'   Default is "Lambda".
-#' @param pca_axes A character vector specifying which PCA axes to include in the analysis.
-#'   Default is c("PC1", "PC2"). Set to NULL or empty vector to skip PCA analysis.
-#' @param sig_levels A numeric vector of significance levels for marking results.
-#'   Default is c(0.001, 0.01, 0.05) corresponding to ***, **, and * respectively.
-#' @param reps An integer specifying the number of permutations for significance testing.
-#'   Default is 999.
-#' @param verbose A logical value indicating whether to display progress information and warnings.
-#'   Default is TRUE.
+#' @param trait_data A data frame or matrix containing trait data with species as rows
+#' @param phylo_tree A phylogenetic tree object of class "phylo"
+#' @param methods Character vector specifying methods to use. Options: "lambda", "K"
+#' @param pca_axes Character vector specifying which PCA axes to include (e.g., c("PC1", "PC2"))
+#' @param sig_levels Numeric vector of significance levels for marking results
+#' @param nsim Number of permutations for significance testing
+#' @param verbose Logical indicating whether to show progress and warnings
 #'
-#' @return A data frame containing the phylogenetic signal results with the following columns:
-#'   \describe{
-#'     \item{trait}{Character. Name of the trait analyzed}
-#'     \item{coverage}{Character. Percentage of species with valid data for the trait}
-#'     \item{n_sp}{Integer. Number of species included in the analysis}
-#'     \item{signal}{Numeric. Phylogenetic signal value}
-#'     \item{p}{Numeric. P-value from permutation test}
-#'     \item{significance}{Character. Significance level markers (***,**,*,ns)}
-#'     \item{method}{Character. Method used for calculating phylogenetic signal}
-#'   }
-#'
-#'   The returned object also contains the following attributes:
-#'   \describe{
-#'     \item{methods}{Character vector of methods used}
-#'     \item{pca_axes}{Character vector of PCA axes requested}
-#'     \item{pca_failed}{Logical indicating if PCA analysis failed}
-#'     \item{sig_levels}{Numeric vector of significance levels used}
-#'     \item{reps}{Integer number of permutations used}
-#'     \item{pca_results}{Data frame of PCA scores (if PCA was successful)}
-#'   }
-#'
-#' @details
-#' The function performs the following steps:
-#' \enumerate{
-#'   \item Validates input parameters and required packages
-#'   \item Conducts PCA analysis on complete trait data (if requested)
-#'   \item For each trait (original + PCA axes):
-#'     \itemize{
-#'       \item Identifies species with valid trait data
-#'       \item Matches species between trait data and phylogenetic tree
-#'       \item Prunes the phylogenetic tree to include only common species
-#'       \item Calculates phylogenetic signal using specified methods
-#'       \item Performs permutation tests for significance
-#'     }
-#'   \item Compiles results with coverage statistics and significance markers
-#' }
-#'
-#' Phylogenetic Signal Methods:
-#' \describe{
-#'   \item{Lambda}{Pagel's lambda - measures the degree to which trait evolution follows Brownian motion}
-#'   \item{K}{Blomberg's K - compares trait variation to that expected under Brownian motion}
-#'   \item{K.star}{Modified K statistic accounting for tree structure}
-#'   \item{I}{Moran's I - measures spatial autocorrelation in trait values}
-#'   \item{Cmean}{Mean of squared changes - measures evolutionary rate}
-#' }
-#'
-#' Data Requirements:
-#' \itemize{
-#'   \item Minimum 4 species with valid data for analysis
-#'   \item Species names must match between trait data and phylogenetic tree
-#'   \item Trait data should be numeric
-#' }
-#'
-#' PCA Analysis:
-#' If PCA axes are requested, the function performs PCA on complete cases only.
-#' PCA is conducted with scaling and centering. If PCA fails or insufficient
-#' complete data is available, the requested PCA axes will show NA values.
+#' @return A data frame containing phylogenetic signal results
 #'
 #' @examples
 #' \dontrun{
@@ -89,45 +25,39 @@
 #' # Extract trait data
 #' sp <- colnames(BCI$com)
 #' subtraits <- extract_traits(sp, TRY, rank = "species",
-#'                            traits = c("LA", "LMA", "LeafN", "PlantHeight", "SeedMass", "SSD"))
+#'                             traits = c("LA", "LMA", "LeafN", "PlantHeight", "SeedMass", "SSD"))
 #'
 #' # Calculate phylogenetic signal using Lambda method
-#' pnc(subtraits, BCI$phy_species, methods = "Lambda")
+#' pnc(subtraits, BCI$phy_species, methods = "lambda")
 #'
 #' # Calculate without PCA analysis
-#' pnc(subtraits, BCI$phy_species, methods = "Lambda", pca_axes = NULL)
+#' pnc(subtraits, BCI$phy_species, methods = "lambda", pca_axes = NULL)
 #' }
 #'
 #' @references
 #' Münkemüller, T., Lavergne, S., Bzeznik, B., Dray, S., Jombart, T., Schiffers, K. and Thuiller, W. (2012). How to measure and test phylogenetic signal. Methods in Ecology and Evolution, 3(4), 743-756. \url{https://doi.org/10.1111/j.2041-210X.2012.00196.x}
 #'
-#' Keck, F., Rimet, F., Bouchez, A., & Franc, A. (2016). phylosignal: an R package to measure, test, and explore the phylogenetic signal. Ecology and Evolution, 6(9), 2774-2780. \url{https://doi.org/10.1002/ece3.2051}
-#'
 #' @export
-#' @importFrom phylobase phylo4d
-#' @importFrom phylosignal phyloSignal
+#' @importFrom phytools phylosig
 #' @importFrom ape drop.tip
 #' @importFrom stats prcomp complete.cases
 #' @importFrom utils txtProgressBar setTxtProgressBar
 pnc <- function(trait_data, phylo_tree,
-                methods = "Lambda",
+                methods = "lambda",
                 pca_axes = c("PC1", "PC2"),
                 sig_levels = c(0.001, 0.01, 0.05),
-                reps = 999,
+                nsim = 1000,
                 verbose = TRUE) {
   if (!is.data.frame(trait_data) && !is.matrix(trait_data)) {
     stop("The trait_data must be a data frame or a matrix!")
   }
-  #if (any(is.na(trait_data)) && verbose) {
-  #  warning(paste0("Trait dataset contains NA values."))
-  #}
-  required_packages <- c("phylobase", "phylosignal", "ape")
+  required_packages <- c("phytools", "ape")
   for (pkg in required_packages) {
     if (!base::requireNamespace(pkg, quietly = TRUE)) {
       base::stop(base::paste("Package", pkg, "is required but not installed."))
     }
   }
-  available_methods <- c("Lambda", "K", "K.star", "I", "Cmean")
+  available_methods <- c("lambda", "K")
   methods <- base::match.arg(methods, available_methods, several.ok = TRUE)
   available_axes <- base::paste0("PC", 1:base::ncol(trait_data))
   pca_axes <- base::intersect(pca_axes, available_axes)
@@ -181,15 +111,15 @@ pnc <- function(trait_data, phylo_tree,
     else if (p_value <= levels[3]) return("*")
     else return("ns")
   }
-  calculate_phylo_signal <- function(tree, trait_vector, method, reps) {
+  calculate_phylo_signal <- function(tree, trait_vector, method, nsim) {
     base::tryCatch({
-      p4d <- phylobase::phylo4d(tree, tip.data = base::data.frame(trait = trait_vector))
-      method_map <- c("Lambda" = "Lambda", "K" = "K", "K.star" = "K.star", "I" = "I", "Cmean" = "Cmean")
-      phylo_method <- method_map[method]
-      result <- phylosignal::phyloSignal(p4d, methods = phylo_method, reps = reps)
-      signal_value <- result$stat[1, phylo_method]
-      p_value <- result$pvalue[1, phylo_method]
-      return(base::list(signal = signal_value, p = p_value))
+      if (method == "lambda") {
+        result <- phytools::phylosig(tree, trait_vector, method = "lambda", test = TRUE, nsim = nsim)
+        return(base::list(signal = result$lambda, p = result$P))
+      } else if (method == "K") {
+        result <- phytools::phylosig(tree, trait_vector, method = "K", test = TRUE, nsim = nsim)
+        return(base::list(signal = result$K, p = result$P))
+      }
     }, error = function(e) {
       if (verbose) {
         base::warning(base::paste("Error calculating", method, ":", e$message))
@@ -280,8 +210,9 @@ pnc <- function(trait_data, phylo_tree,
     base::names(trait_for_analysis) <- valid_species[valid_species %in% common_species]
     trait_for_analysis <- trait_for_analysis[pruned_tree$tip.label]
     for (method in methods) {
-      result <- calculate_phylo_signal(pruned_tree, trait_for_analysis, method, reps)
+      result <- calculate_phylo_signal(pruned_tree, trait_for_analysis, method, nsim)
       sig_mark <- get_significance(result$p)
+
       results <- base::rbind(results, base::data.frame(
         trait = trait_name,
         coverage = coverage,
@@ -291,6 +222,7 @@ pnc <- function(trait_data, phylo_tree,
         significance = sig_mark,
         method = method
       ))
+
       if (verbose) {
         current_iteration <- current_iteration + 1
         utils::setTxtProgressBar(pb, current_iteration)
@@ -304,7 +236,7 @@ pnc <- function(trait_data, phylo_tree,
   base::attr(results, "pca_axes") <- pca_axes
   base::attr(results, "pca_failed") <- pca_failed
   base::attr(results, "sig_levels") <- sig_levels
-  base::attr(results, "reps") <- reps
+  base::attr(results, "nsim") <- nsim
   if (!base::is.null(pca_results)) {
     base::attr(results, "pca_results") <- pca_results
   }
