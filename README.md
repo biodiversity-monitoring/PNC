@@ -23,21 +23,23 @@ Get started with PNC to bring standardized, automated phylogenetic niche conserv
 
 ## Main functions of PNC and their descriptions
 
-| Name                     | Type     | Description                                                                                                                                                                                                                                                                         |
-|-----------------|-----------------|---------------------------------------|
-| **AmphiBIO**             | Database | A comprehensive global database of amphibian natural history traits. It provides 12 continuous traits related to ecology, morphology, and reproduction for over 6,500 species across all orders (Anura, Caudata, Gymnophiona), 61 families, and 531 genera (Oliveira et al., 2017). |
-| **AVONET**               | Database | A comprehensive trait database for extant avian species, providing detailed morphological information through 11 continuous traits covering 11,009 bird species worldwide (Tobias et al., 2022).                                                                                    |
-| **BCI**                  | Database | A 50-hectare forest ecosystem dataset from Barro Colorado Island, comprising comprehensive species inventories, phylogenetic trees at species and genus levels, and community composition matrices (Condit et al., 2019).                                                           |
-| **COMBINE**              | Database | An integrated mammalian trait database consolidating 40 continuous morphological and ecological traits for 6,234 extant and recently extinct mammal species (Soria et al., 2021).                                                                                                   |
-| **Fishlife**             | Database | A comprehensive compilation of life-history traits for described fish species (Chondrichthyes and Osteichthyes), featuring 17 continuous traits with at least one measurement for 26,622 species (Thorson et al., 2023).                                                            |
-| **HimalayanBirds**       | Database | A dataset providing information on bird species in the Himalayas, including species names, phylogenetic relationships, and community composition across elevation bands (Ding et al., 2021).                                                                                        |
-| **ReptTraits**           | Database | A comprehensive reptilian trait dataset comprising 8 continuous morphological and ecological traits across 12,060 species spanning major reptilian clades (Crocodylia, Testudines, Rhynchocephalia, Amphisbaenia, Sauria, and Serpentes) (Oskyrko et al., 2024).                    |
-| **TRY**                  | Database | A global plant trait database providing species-level datasets with 20 continuous traits widely utilized in ecological and evolutionary research (Kattge et al., 2020).                                                                                                             |
-| **`merge_species_df()`** | function | Merges two data frames based on the "species" column, automatically handling missing values and inconsistent columns.                                                                                                                                                               |
-| **`extract_traits()`**   | function | Extracts trait data at the species, genus, or family level from global trait databases.                                                                                                                                                                                             |
-| **`coverage()`**         | function | Provides statistics on trait availability, including the number of missing values and coverage rates.                                                                                                                                                                               |
-| **`pnc()`**              | function | Performs a phylogenetic niche conservatism analysis within a single community, quantifying the phylogenetic signal in trait data. Optional PCA dimensionality reduction and multiple statistical approaches are supported.                                                          |
-| **`compnc()`**           | function | Conducts a comprehensive phylogenetic niche conservatism analysis across multiple communities, similar in function to `pnc()`.                                                                                                                                                      |
+| Name                      | Type     | Description                                                                                                                                                                                                                                                                         |
+|---------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **AmphiBIO**              | Database | A comprehensive global database of amphibian natural history traits. It provides 12 continuous traits related to ecology, morphology, and reproduction for over 6,500 species across all orders (Anura, Caudata, Gymnophiona), 61 families, and 531 genera (Oliveira et al., 2017). |
+| **AVONET**                | Database | A comprehensive trait database for extant avian species, providing detailed morphological information through 11 continuous traits covering 11,009 bird species worldwide (Tobias et al., 2022).                                                                                    |
+| **BCI**                   | Database | A 50-hectare forest ecosystem dataset from Barro Colorado Island, comprising comprehensive species inventories, phylogenetic trees at species and genus levels, and community composition matrices (Condit et al., 2019).                                                           |
+| **COMBINE**               | Database | An integrated mammalian trait database consolidating 40 continuous morphological and ecological traits for 6,234 extant and recently extinct mammal species (Soria et al., 2021).                                                                                                   |
+| **Fishlife**              | Database | A comprehensive compilation of life-history traits for described fish species (Chondrichthyes and Osteichthyes), featuring 17 continuous traits with at least one measurement for 26,622 species (Thorson et al., 2023).                                                            |
+| **HimalayanBirds**        | Database | A dataset providing information on bird species in the Himalayas, including species names, phylogenetic relationships, and community composition across elevation bands (Ding et al., 2021).                                                                                        |
+| **ReptTraits**            | Database | A comprehensive reptilian trait dataset comprising 8 continuous morphological and ecological traits across 12,060 species spanning major reptilian clades (Crocodylia, Testudines, Rhynchocephalia, Amphisbaenia, Sauria, and Serpentes) (Oskyrko et al., 2024).                    |
+| **TRY**                   | Database | A global plant trait database providing species-level datasets with 20 continuous traits widely utilized in ecological and evolutionary research (Kattge et al., 2020).                                                                                                             |
+| **`merge_species_df()`**  | function | Merges two data frames based on the "species" column, automatically handling missing values and inconsistent columns.                                                                                                                                                               |
+| **`extract_traits()`**    | function | Extracts trait data at the species, genus, or family level from global trait databases.                                                                                                                                                                                             |
+| **`coverage()`**          | function | Provides statistics on trait availability, including the number of missing values and coverage rates.                                                                                                                                                                               |
+| **`pnc()`**               | function | Performs a phylogenetic niche conservatism analysis within a single community, quantifying the phylogenetic signal in trait data. Optional PCA dimensionality reduction and multiple statistical approaches are supported.                                                          |
+| **`compnc()`**            | function | Conducts a comprehensive phylogenetic niche conservatism analysis across multiple communities, similar in function to `pnc()`.                                                                                                                                                      |
+| **`pnc_robustness()`**    | function | Evaluates the robustness of phylogenetic signal estimates by simulating trait data and testing the consistency of statistical significance conclusions.                                                                                                                             |
+| **`compnc_robustness()`** | function | Extends `pnc_robustness()` to evaluate the robustness of phylogenetic signal estimates across multiple communities.                                                                                                                                                                 |
 
 ## PNC workflow
 
@@ -57,15 +59,17 @@ sp
 subtraits <- extract_traits(sp, TRY, rank = "species", traits = c("LA", "LMA", "LeafN", "PlantHeight", "SeedMass", "SSD"))
 head(subtraits)
 coverage(subtraits)
-pnc(subtraits, BCI$phy_species, methods = "Lambda", pca_axes = c("PC1", "PC2"))
-compnc(com = BCI$com, subtraits, BCI$phy_species, methods = "Lambda", pca_axes = NULL)
+pnc(subtraits, BCI$phy_species, methods = "lambda", pca_axes = c("PC1", "PC2"))
+pnc_robustness(subtraits, BCI$phy_species, methods = "lambda", n_simulations = 100)
+# compnc(com = BCI$com, subtraits, BCI$phy_species, methods = "lambda", pca_axes = NULL)
 
 # genus level
 sp2 <- unique(BCI$splist$genus)
 subtraits2 <- extract_traits(sp2, TRY, rank = "genus", traits = c("LA", "LMA", "LeafN", "PlantHeight", "SeedMass", "SSD"))
 head(subtraits2)
 coverage(subtraits2)
-pnc(subtraits2, BCI$phy_genus, methods = "Lambda", pca_axes = c("PC1", "PC2"))
+pnc(subtraits2, BCI$phy_genus, methods = "lambda", pca_axes = c("PC1", "PC2"))
+pnc_robustness(subtraits2, BCI$phy_genus, methods = "lambda", n_simulations = 100)
 ```
 
 ### Study case 2
@@ -82,9 +86,14 @@ sp
 subtraits <- extract_traits(sp, AVONET, rank = "species")
 head(subtraits)
 coverage(subtraits)
-pnc(subtraits, HimalayanBirds$phy_species, methods = "Lambda", pca_axes = c("PC1", "PC2"))
-compnc(com = HimalayanBirds$com, subtraits, HimalayanBirds$phy_species, methods = "Lambda", pca_axes = NULL)
-
+pnc(subtraits, HimalayanBirds$phy_species, methods = "lambda", pca_axes = c("PC1", "PC2"))
+compnc(com = HimalayanBirds$com, subtraits, HimalayanBirds$phy_species, methods = "lambda", pca_axes = NULL)
+compnc_robustness(HimalayanBirds$com,
+                  subtraits,
+                  HimalayanBirds$phy_species,
+                  methods = "lambda",
+                  pca_axes = NULL,
+                  n_simulations = 100)
 ```
 
 ## Reference

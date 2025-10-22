@@ -20,11 +20,11 @@
 #' @details
 #' The function works by:
 #'
-#' 1. Transforming the phylogenetic tree according to the target lambda value using phytools::rescale()
+#' 1. Transforming the phylogenetic tree according to the target lambda value using rescale()
 #'
-#' 2. Simulating trait data using phytools::fastBM() on the transformed tree
+#' 2. Simulating trait data using fastBM() on the transformed tree
 #'
-#' 3. Estimating the phylogenetic signal using phytools::phylosig()
+#' 3. Estimating the phylogenetic signal using phylosig()
 #'
 #' 4. Repeating until the estimated lambda is within tolerance of the target
 #'
@@ -47,15 +47,23 @@
 #'
 #' @note
 #' The function may take considerable time to converge for certain lambda values,
-#' especially those close to intermediate values. Consider adjusting
+#' especially those close to intermediate values.
+#'
+#' Consider adjusting
 #' the tolerance parameter if convergence is slow.
 #'
+#' If `target_lambda` is greater than 1,
+#' it will be automatically capped at 1, as lambda values typically range from 0 to 1.
 #'
 #' @importFrom ape Ntip
 #' @importFrom phytools fastBM phylosig rescale
+#' @importFrom geiger lambdaTree
 #'
 #' @export
 simulate_lambda_trait <- function(target_lambda, tree, max_attempts = 100000, tolerance = 0.02) {
+  if(target_lambda > 1) {
+    target_lambda <- 1
+  }
   attempt <- 1
   while (attempt <= max_attempts) {
     # Transform tree based on target lambda
