@@ -24,7 +24,7 @@ Get started with PNC to bring standardized, automated phylogenetic niche conserv
 ## Main functions of PNC and their descriptions
 
 | Name                      | Type     | Description                                                                                                                                                                                                                                                                         |
-|---------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|-------------|-------------|----------------------------------------------|
 | **AmphiBIO**              | Database | A comprehensive global database of amphibian natural history traits. It provides 12 continuous traits related to ecology, morphology, and reproduction for over 6,500 species across all orders (Anura, Caudata, Gymnophiona), 61 families, and 531 genera (Oliveira et al., 2017). |
 | **AVONET**                | Database | A comprehensive trait database for extant avian species, providing detailed morphological information through 11 continuous traits covering 11,009 bird species worldwide (Tobias et al., 2022).                                                                                    |
 | **BCI**                   | Database | A 50-hectare forest ecosystem dataset from Barro Colorado Island, comprising comprehensive species inventories, phylogenetic trees at species and genus levels, and community composition matrices (Condit et al., 2019).                                                           |
@@ -33,7 +33,7 @@ Get started with PNC to bring standardized, automated phylogenetic niche conserv
 | **HimalayanBirds**        | Database | A dataset providing information on bird species in the Himalayas, including species names, phylogenetic relationships, and community composition across elevation bands (Ding et al., 2021).                                                                                        |
 | **ReptTraits**            | Database | A comprehensive reptilian trait dataset comprising 8 continuous morphological and ecological traits across 12,060 species spanning major reptilian clades (Crocodylia, Testudines, Rhynchocephalia, Amphisbaenia, Sauria, and Serpentes) (Oskyrko et al., 2024).                    |
 | **TRY**                   | Database | A global plant trait database providing species-level datasets with 20 continuous traits widely utilized in ecological and evolutionary research (Kattge et al., 2020).                                                                                                             |
-| **`merge_species_df()`**  | function | Merges two data frames based on the "species" column, automatically handling missing values and inconsistent columns.                                                                                                                                                               |
+| **`merge_dataset()`**     | function | Merges two data frames based on the "species" column, automatically handling missing values and inconsistent columns.                                                                                                                                                               |
 | **`extract_traits()`**    | function | Extracts trait data at the species, genus, or family level from global trait databases.                                                                                                                                                                                             |
 | **`coverage()`**          | function | Provides statistics on trait availability, including the number of missing values and coverage rates.                                                                                                                                                                               |
 | **`pnc()`**               | function | Performs a phylogenetic niche conservatism analysis within a single community, quantifying the phylogenetic signal in trait data. Optional PCA dimensionality reduction and multiple statistical approaches are supported.                                                          |
@@ -48,52 +48,97 @@ Get started with PNC to bring standardized, automated phylogenetic niche conserv
 ### Study case 1
 
 ```{r,class.source = 'fold-show'}
+library(PNC)
+
+# Load dataset
 data("BCI")
 str(BCI)
 data("TRY")
 head(TRY)
 
-# species level
+## species level
+
+# Extract species names
 sp <- colnames(BCI$com)
 sp
+
+# Extract trait data for the specified species from the TRY database
 subtraits <- extract_traits(sp, TRY, rank = "species", traits = c("LA", "LMA", "LeafN", "PlantHeight", "SeedMass", "SSD"))
 head(subtraits)
-coverage(subtraits)
-pnc(subtraits, BCI$phy_species, methods = "lambda", pca_axes = c("PC1", "PC2"))
-pnc_robustness(subtraits, BCI$phy_species, methods = "lambda", n_simulations = 100)
-# compnc(com = BCI$com, subtraits, BCI$phy_species, methods = "lambda", pca_axes = NULL)
 
-# genus level
+# Calculate and display the coverage of the trait data
+coverage(subtraits)
+
+# Perform phylogenetic niche conservatism analysis using the pnc() function
+pnc(subtraits, BCI$phy_species, methods = "lambda", pca_axes = c("PC1", "PC2"))
+
+# Assess the robustness of the phylogenetic signal estimates
+set.seed(123)
+pnc_robustness(subtraits, BCI$phy_species, methods = "lambda", n_simulations = 100)
+
+## genus level
+
+# Extract genus names
 sp2 <- unique(BCI$splist$genus)
+
+# Extract trait data for the specified genera from the TRY database
 subtraits2 <- extract_traits(sp2, TRY, rank = "genus", traits = c("LA", "LMA", "LeafN", "PlantHeight", "SeedMass", "SSD"))
 head(subtraits2)
+
+# Calculate and display the coverage of the trait data
 coverage(subtraits2)
+
+# Perform phylogenetic niche conservatism analysis
 pnc(subtraits2, BCI$phy_genus, methods = "lambda", pca_axes = c("PC1", "PC2"))
+
+# Assess the robustness of the phylogenetic signal estimates at the genus level
+set.seed(123)
 pnc_robustness(subtraits2, BCI$phy_genus, methods = "lambda", n_simulations = 100)
 ```
 
 ### Study case 2
 
 ```{r,class.source = 'fold-show'}
+# Load dataset
 data("HimalayanBirds")
 str(HimalayanBirds)
 data("AVONET")
 head(AVONET)
 
-# species level
+# Extract species names
 sp <- colnames(HimalayanBirds$com)
 sp
+
+# Extract trait data for the specified species from the AVONET database
 subtraits <- extract_traits(sp, AVONET, rank = "species")
 head(subtraits)
+
+# Calculate and display the coverage of the trait data
 coverage(subtraits)
+
+# Perform phylogenetic niche conservatism analysis
 pnc(subtraits, HimalayanBirds$phy_species, methods = "lambda", pca_axes = c("PC1", "PC2"))
+set.seed(123)
+
+# Assess the robustness of the phylogenetic signal estimates 
+pnc_robustness(subtraits,
+               HimalayanBirds$phy_species,
+               methods = "lambda",
+               pca_axes = c("PC1", "PC2"),
+               n_simulations = 100)
+
+# Perform phylogenetic niche conservatism analysis across multiple communities
 compnc(com = HimalayanBirds$com, subtraits, HimalayanBirds$phy_species, methods = "lambda", pca_axes = NULL)
-compnc_robustness(HimalayanBirds$com,
-                  subtraits,
-                  HimalayanBirds$phy_species,
-                  methods = "lambda",
-                  pca_axes = NULL,
-                  n_simulations = 100)
+
+# Assess the robustness of phylogenetic signal estimates across multiple communities
+set.seed(123)
+robust_results <- compnc_robustness(HimalayanBirds$com,
+                                    subtraits,
+                                    HimalayanBirds$phy_species,
+                                    methods = "lambda",
+                                    pca_axes = c("PC1", "PC2"),
+                                    n_simulations = 100)
+robust_results
 ```
 
 ## Reference
