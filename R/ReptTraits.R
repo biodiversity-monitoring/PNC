@@ -25,7 +25,7 @@
 #'
 #' @references
 #' Oskyrko, O., Mi, C., Meiri, S., & Du, W. (2024). ReptTraits: a comprehensive dataset of ecological traits in reptiles. Scientific Data, 11(1), 243.
-#' \url{https://doi.org/10.1038/s41597-024-03079-5}
+#' \doi{10.1038/s41597-024-03079-5}
 #'
 #' @examples
 #' data(ReptTraits)

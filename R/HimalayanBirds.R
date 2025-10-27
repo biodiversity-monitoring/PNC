@@ -26,7 +26,7 @@
 #'
 #' @references
 #'Ding, Z., Hu, H., Cadotte, M.W., Liang, J., Hu, Y., & Si, X. (2021). Elevational patterns of bird functional and phylogenetic structure
-#'in the central Himalaya. Ecography, 44(9), 1403-1417. \url{https://doi.org/10.1111/ecog.05660}
+#'in the central Himalaya. Ecography, 44(9), 1403-1417. \doi{10.1111/ecog.05660}
 #'
 #' @examples
 #' # Load the dataset

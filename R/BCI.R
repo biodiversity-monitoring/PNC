@@ -10,12 +10,12 @@
 #'   \item{com}{A community matrix showing species abundance across different sampling plots, with species counts for each location.}
 #' }
 #' @source
-#' Barro Colorado Island (BCI) (\url{https://forestgeo.si.edu/sites/neotropics/barro-colorado-island})
+#' Barro Colorado Island (BCI)
 #'
 #' @references
 #' Condit, R., Pérez, R., Aguilar, S., Lao, S., Foster, R., & Hubbell, S. P. (2019).
 #' Complete data from the Barro Colorado 50-ha plot: 423617 trees, 35 years, 2019 version.
-#' Dryad Digital Repository. \url{https://doi.org/10.15146/5xcp-0d46}
+#' Dryad Digital Repository. \doi{10.15146/5xcp-0d46}
 #'
 #' @examples
 #' # Load the dataset

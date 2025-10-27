@@ -37,7 +37,7 @@
 #' @references
 #' Münkemüller, T., Lavergne, S., Bzeznik, B., Dray, S., Jombart, T., Schiffers, K. and Thuiller, W. (2012).
 #' How to measure and test phylogenetic signal. Methods in Ecology and Evolution, 3(4), 743-756.
-#' \url{https://doi.org/10.1111/j.2041-210X.2012.00196.x}
+#' \doi{10.1111/j.2041-210X.2012.00196.x}
 #'
 #' @export
 #' @importFrom phytools phylosig

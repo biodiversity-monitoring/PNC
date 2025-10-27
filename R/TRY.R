@@ -51,7 +51,7 @@
 #'
 #' @references
 #' Kattge, J., Bönisch, G., Díaz, S., et al. (2020). TRY plant trait database –
-#' enhanced coverage and open access. Global Change Biology, 26(1), 119-188. \url{https://doi.org/10.1111/gcb.14904}
+#' enhanced coverage and open access. Global Change Biology, 26(1), 119-188. \doi{10.1111/gcb.14904}
 #'
 #' @examples
 #' # Load the dataset
