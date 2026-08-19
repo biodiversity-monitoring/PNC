@@ -2,96 +2,152 @@
 % Please edit documentation in R/compnc_robustness.R
 \name{compnc_robustness}
 \alias{compnc_robustness}
-\title{Test Robustness of Phylogenetic Niche Conservatism Analysis Across Multiple Communities}
+\title{Assess Sensitivity of Phylogenetic Signal to Missing Trait Data
+Across Multiple Communities}
 \usage{
 compnc_robustness(
   com,
   trait_data,
   phylo_tree,
-  methods = "lambda",
-  pca_axes = c("PC1", "PC2"),
-  sig_levels = c(0.001, 0.01, 0.05),
   min_abundance = 0,
   n_simulations = 100,
   alpha_level = 0.05,
-  tolerance = 0.05,
   verbose = TRUE
 )
 }
 \arguments{
-\item{com}{A community matrix with sites as rows and species as columns}
+\item{com}{A community matrix or data frame with communities as rows and
+species as columns. Cell values represent species abundance or occurrence.}
 
-\item{trait_data}{A data frame or matrix containing trait data with species as rows}
+\item{trait_data}{A data frame or matrix containing continuous trait data,
+with species as rows and traits as columns. Species names must be stored
+as row names.}
 
-\item{phylo_tree}{A phylogenetic tree object of class "phylo"}
+\item{phylo_tree}{A phylogenetic tree object of class `"phylo"`.}
 
-\item{methods}{Character string specifying method to use. Options: "lambda" or "K".
-Default is "lambda"}
+\item{min_abundance}{Minimum abundance required for a species to be
+considered present in a community. Default is 0.}
 
-\item{pca_axes}{Character vector specifying which PCA axes to include (e.g., c("PC1", "PC2")).
-Default is c("PC1", "PC2")}
+\item{n_simulations}{Number of paired simulations performed for each
+community-trait combination. Default is 100.}
 
-\item{sig_levels}{Numeric vector of significance levels for marking results}
+\item{alpha_level}{Significance threshold used to compare statistical
+conclusions between complete and incomplete simulated data.
+Default is 0.05.}
 
-\item{min_abundance}{Minimum abundance threshold for including species}
-
-\item{n_simulations}{Integer. Number of simulations to run for robustness testing.
-Default is 100}
-
-\item{alpha_level}{Numeric. Significance level for statistical testing.
-Default is 0.05}
-
-\item{tolerance}{Numeric. Acceptable difference between target and estimated signal
-values during trait simulation. Default is 0.05}
-
-\item{verbose}{Logical indicating whether to show progress and warnings}
+\item{verbose}{Logical. If `TRUE`, a progress bar and warnings are shown.
+Default is `TRUE`.}
 }
 \value{
-A data frame containing the original phylogenetic signal results with
-  additional columns:
+A data frame containing the observed phylogenetic signal results
+  from `compnc()` and the following sensitivity metrics:
   \itemize{
-    \item robustness: Percentage of simulations that maintain the same statistical
-          significance conclusion as the original analysis
-    \item signal_sd: Standard deviation of phylogenetic signal values across
-          successful simulations
+    \item `simulation_lambda`: lambda value used to generate simulated trait
+      data. This equals the observed lambda unless the latter exceeds the
+      maximum supported by the local reference phylogeny.
+    \item `consistency`: percentage of successful simulations in which
+      complete and incomplete data produced the same significance
+      conclusion.
+    \item `signal_bias`: mean paired difference between lambda estimated
+      from incomplete and complete simulated data
+      (`lambda_missing - lambda_complete`).
+    \item `signal_sd`: standard deviation of the paired lambda differences.
+    \item `n_successful`: number of simulations in which both complete and
+      incomplete analyses were successfully estimated.
   }
 }
 \description{
-This function evaluates the robustness of phylogenetic signal estimates across
-multiple communities by simulating trait data with the same phylogenetic signal
-strength as observed, applying the original missing data pattern, and testing
-how consistently the statistical significance is recovered across multiple
-simulations for each community.
+`compnc_robustness()` evaluates how observed patterns of missing trait data
+affect inference of phylogenetic signal across multiple communities based
+on Pagel's lambda.
+}
+\details{
+For each community and trait, the observed lambda is first estimated using
+`compnc()`. Complete trait data are then simulated under Brownian motion on
+the local reference phylogeny transformed according to the observed lambda.
+Each simulated trait is analyzed twice: first using the complete local
+species pool represented in the phylogeny, and then after applying the
+observed missing-data pattern of the focal trait.
+
+If the observed lambda exceeds the maximum value supported by the local
+reference phylogeny, the largest valid lambda for that phylogeny is used
+for simulation. The observed lambda estimate itself is not modified.
+
+The paired difference between the two analyses quantifies the effect of
+trait-data incompleteness on phylogenetic signal estimation.
+
+
+The analysis is performed separately for each community and original trait.
+For each community, the reference species pool consists of species present
+in the community and represented in the phylogeny. Species without trait
+values are retained in the complete simulated data and removed only when
+the observed missing-data pattern is applied.
+
+The simulation is conditional on the lambda estimated from the observed
+data. The local reference phylogeny is transformed according to this lambda,
+and trait values are simulated under Brownian motion on the transformed
+tree.
+
+The maximum valid lambda depends on the branch-length structure of the
+local reference phylogeny. Consequently, an observed lambda estimated from
+a trait-specific pruned tree may occasionally exceed the maximum value that
+can be applied to the larger local reference phylogeny. In this case,
+`compnc_robustness()` identifies the largest valid lambda numerically and
+uses that value only for simulation. A warning is issued when this
+adjustment occurs.
+
+Each simulated trait is analyzed before and after applying the observed
+missing-data pattern. Because the same simulated trait is used in both
+analyses, differences between them reflect the effect of trait-data
+incompleteness.
+
+Simulated lambda estimates are not forced to equal the observed lambda.
+Their natural stochastic variation is retained.
+
+Repeated Pagel's lambda estimation is accelerated by caching the
+phylogeny-specific covariance structure and using an algebraically
+equivalent spectral representation of the likelihood. This changes the
+numerical implementation but not the Pagel's lambda likelihood,
+likelihood-ratio test, or P value.
+
+PCA axes are not included because evaluating their missing-data sensitivity
+would require multivariate trait simulation that preserves covariance among
+traits together with trait-specific missing-data patterns.
+
+Blomberg's K is not used as the generating parameter because K is a
+Brownian-motion-referenced summary statistic rather than a direct parameter
+of the trait-generating model.
 }
 \examples{
-\dontrun{
-# Load example data
-data("HimalayanBirds")
-str(HimalayanBirds)
-data("AVONET")
-head(AVONET)
+\donttest{
+data(HimalayanBirds)
+data(AVONET)
 
-# species level
 sp <- colnames(HimalayanBirds$com)
-sp
-subtraits <- extract_traits(sp, AVONET, rank = "species")
-head(subtraits)
-coverage(subtraits)
-pnc(subtraits, HimalayanBirds$phy_species, methods = "lambda", pca_axes = c("PC1", "PC2"))
-pnc_robustness(subtraits, HimalayanBirds$phy_species,
-               methods = "lambda", pca_axes = NULL, n_simulations = 100)
 
-compnc(com = HimalayanBirds$com, subtraits, HimalayanBirds$phy_species,
-       methods = "lambda", pca_axes = NULL)
+subtraits <- extract_traits(
+  sp,
+  AVONET,
+  rank = "species"
+)
 
-# Test robustness of phylogenetic signal analysis
-robust_results <- compnc_robustness(HimalayanBirds$com,
-                                    subtraits,
-                                    HimalayanBirds$phy_species,
-                                    methods = "lambda",
-                                    pca_axes = NULL,
-                                    n_simulations = 100)
-robust_results
+set.seed(123)
+
+compnc_robustness(
+  HimalayanBirds$com,
+  subtraits,
+  HimalayanBirds$phy_species,
+  n_simulations = 10
+)
 }
 
+}
+\references{
+Pagel, M. (1999). Inferring the historical patterns of biological
+evolution. Nature, 401, 877-884.
+
+Münkemüller, T., Lavergne, S., Bzeznik, B., Dray, S., Jombart, T.,
+Schiffers, K. and Thuiller, W. (2012). How to measure and test
+phylogenetic signal. Methods in Ecology and Evolution, 3, 743-756.
+\doi{10.1111/j.2041-210X.2012.00196.x}
 }

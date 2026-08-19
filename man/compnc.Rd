@@ -2,13 +2,13 @@
 % Please edit documentation in R/compnc.R
 \name{compnc}
 \alias{compnc}
-\title{Calculate Phylogenetic Niche Conservatism Across Multiple Communities}
+\title{Estimate Phylogenetic Signal Across Multiple Communities}
 \usage{
 compnc(
   com,
   trait_data,
   phylo_tree,
-  methods = c("lambda", "K"),
+  methods = "lambda",
   pca_axes = c("PC1", "PC2"),
   sig_levels = c(0.001, 0.01, 0.05),
   min_abundance = 0,
@@ -17,48 +17,102 @@ compnc(
 )
 }
 \arguments{
-\item{com}{A community matrix with sites as rows and species as columns}
+\item{com}{A community matrix or data frame with communities as rows and
+species as columns. Cell values represent species abundance or occurrence.}
 
-\item{trait_data}{A data frame or matrix containing trait data with species as rows}
+\item{trait_data}{A data frame or matrix containing continuous trait data,
+with species as rows and traits as columns. Species names must be stored
+as row names.}
 
-\item{phylo_tree}{A phylogenetic tree object of class "phylo"}
+\item{phylo_tree}{A phylogenetic tree object of class `"phylo"`.}
 
-\item{methods}{Character vector specifying methods to use. Options: "lambda", "K"}
+\item{methods}{Character vector specifying the phylogenetic signal metrics
+to calculate. Available options are `"lambda"` and `"K"`.}
 
-\item{pca_axes}{Character vector specifying which PCA axes to include (e.g., c("PC1", "PC2"))}
+\item{pca_axes}{Character vector specifying PCA axes to include, for example
+`c("PC1", "PC2")`. Set to `NULL` to skip PCA.}
 
-\item{sig_levels}{Numeric vector of significance levels for marking results}
+\item{sig_levels}{Numeric vector of three significance thresholds used to
+assign significance symbols.}
 
-\item{min_abundance}{Minimum abundance threshold for including species}
+\item{min_abundance}{Minimum abundance required for a species to be
+considered present in a community.}
 
-\item{nsim}{Number of permutations for significance testing}
+\item{nsim}{Number of randomizations used for significance testing of
+Blomberg's K.}
 
-\item{verbose}{Logical indicating whether to show progress and warnings}
+\item{verbose}{Logical. If `TRUE`, warnings from PCA or phylogenetic signal
+estimation are reported.}
 }
 \value{
-A data frame containing phylogenetic signal results for all communities
+A data frame with one row for each
+  community-trait-method combination:
+  \itemize{
+    \item `plot`: community name.
+    \item `trait`: trait name or PCA axis.
+    \item `coverage`: percentage of species in the community with available
+      trait values.
+    \item `n_sp`: number of species actually included in the phylogenetic
+      signal analysis after matching trait data with the phylogeny.
+    \item `signal`: estimated phylogenetic signal.
+    \item `p`: P value.
+    \item `significance`: significance symbol.
+    \item `method`: phylogenetic signal metric.
+    \item `n_sp_in_plot`: total number of species present in the community
+      according to `min_abundance`.
+  }
 }
 \description{
-This function conducts comprehensive phylogenetic niche conservatism analysis across multiple
-communities simultaneously. It evaluates phylogenetic signal for trait data across different
-community assemblages using various statistical methods, enabling comparative assessment of
-niche conservatism patterns among communities. The function processes community composition
-matrices, species trait information, and phylogenetic trees to determine whether closely
-related species consistently occupy similar ecological niches across different habitats
-or sampling locations.
+`compnc()` estimates phylogenetic signal in functional traits across
+multiple ecological communities. The function identifies species present
+in each community, matches them with trait data and a phylogenetic tree,
+and estimates phylogenetic signal using Pagel's lambda or Blomberg's K.
+}
+\details{
+When PCA axes are requested, a single PCA is performed using the pooled
+species set represented across the communities, trait data, and phylogeny.
+The resulting common PCA space is then used for all communities, ensuring
+that a given PCA axis represents the same multivariate trait dimension
+across communities.
+
+Phylogenetic signal describes the tendency for related species to resemble
+one another in trait values. It can provide evidence relevant to
+phylogenetic niche conservatism, but does not by itself constitute a
+direct test of phylogenetic niche conservatism.
 }
 \examples{
-\dontrun{
-# Load example data
-data(BCI)
-data(TRY)
+\donttest{
+data(HimalayanBirds)
+data(AVONET)
 
-# Extract trait data
-sp <- colnames(BCI$com)
-subtraits <- extract_traits(sp, TRY, rank = "species",
-                           traits = c("LA", "LMA", "LeafN", "PlantHeight", "SeedMass", "SSD"))
+sp <- colnames(HimalayanBirds$com)
 
-compnc(com = BCI$com, subtraits, BCI$phy_species, methods = "lambda", pca_axes = NULL)
+subtraits <- extract_traits(
+  sp,
+  AVONET,
+  rank = "species"
+)
+
+compnc(
+  HimalayanBirds$com,
+  subtraits,
+  HimalayanBirds$phy_species,
+  methods = "lambda"
+)
+
+compnc(
+  HimalayanBirds$com,
+  subtraits,
+  HimalayanBirds$phy_species,
+  methods = "lambda",
+  pca_axes = NULL
+)
 }
 
+}
+\references{
+Münkemüller, T., Lavergne, S., Bzeznik, B., Dray, S., Jombart, T.,
+Schiffers, K. and Thuiller, W. (2012). How to measure and test
+phylogenetic signal. Methods in Ecology and Evolution, 3, 743-756.
+\doi{10.1111/j.2041-210X.2012.00196.x}
 }

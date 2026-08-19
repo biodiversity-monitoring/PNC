@@ -1,246 +1,468 @@
-#' Analyze Phylogenetic Niche Conservatism in Ecological Communities
+#' Estimate Phylogenetic Signal in Trait Data
 #'
-#' This function performs in-depth phylogenetic niche conservatism analysis for
-#' communities by quantifying phylogenetic signal in trait data using multiple statistical methods.
-#' The function integrates trait data preprocessing, phylogenetic tree manipulation,
-#' optional principal component analysis, and robust statistical testing to provide detailed insights
-#' into evolutionary constraints on trait evolution.
+#' `pnc()` estimates phylogenetic signal in functional traits for a given
+#' species pool. The function matches trait data with a phylogenetic tree,
+#' optionally summarizes multivariate trait variation using principal
+#' component analysis (PCA), and estimates phylogenetic signal using
+#' Pagel's lambda or Blomberg's K.
 #'
-#' @param trait_data A data frame or matrix containing trait data with species as rows
-#' @param phylo_tree A phylogenetic tree object of class "phylo"
-#' @param methods Character vector specifying methods to use. Options: "lambda", "K"
-#' @param pca_axes Character vector specifying which PCA axes to include (e.g., c("PC1", "PC2"))
-#' @param sig_levels Numeric vector of significance levels for marking results
-#' @param nsim Number of permutations for significance testing
-#' @param verbose Logical indicating whether to show progress and warnings
+#' Phylogenetic signal describes the tendency for related species to resemble
+#' one another in trait values. It can provide evidence relevant to
+#' phylogenetic niche conservatism, but does not by itself constitute a
+#' direct test of phylogenetic niche conservatism.
 #'
-#' @return A data frame containing phylogenetic signal results
+#' @param trait_data A data frame or matrix containing continuous trait data,
+#'   with species as rows and traits as columns. Species names must be stored
+#'   as row names.
+#' @param phylo_tree A phylogenetic tree object of class `"phylo"`.
+#' @param methods Character vector specifying the phylogenetic signal metrics
+#'   to calculate. Available options are `"lambda"` and `"K"`.
+#' @param pca_axes Character vector specifying PCA axes to include, for example
+#'   `c("PC1", "PC2")`. Set to `NULL` to skip PCA.
+#' @param sig_levels Numeric vector of three significance thresholds used to
+#'   assign significance symbols.
+#' @param nsim Number of randomizations used for significance testing of
+#'   Blomberg's K.
+#' @param verbose Logical. If `TRUE`, warnings from PCA or phylogenetic signal
+#'   estimation are reported.
+#'
+#' @return A data frame with one row for each trait-method combination:
+#'   \itemize{
+#'     \item `trait`: trait name or PCA axis.
+#'     \item `coverage`: percentage of species with available trait values.
+#'     \item `n_sp`: number of species actually included in the phylogenetic
+#'       signal analysis after matching trait data with the phylogeny.
+#'     \item `signal`: estimated phylogenetic signal.
+#'     \item `p`: P value.
+#'     \item `significance`: significance symbol.
+#'     \item `method`: phylogenetic signal metric.
+#'   }
 #'
 #' @examples
-#' \dontrun{
-#' # Load example data
+#' \donttest{
 #' data(BCI)
 #' data(TRY)
 #'
-#' # Extract trait data
 #' sp <- colnames(BCI$com)
-#' subtraits <- extract_traits(sp, TRY, rank = "species",
-#'                             traits = c("LA", "LMA", "LeafN", "PlantHeight", "SeedMass", "SSD"))
 #'
-#' # Calculate phylogenetic signal using Lambda method
-#' pnc(subtraits, BCI$phy_species, methods = "lambda")
+#' subtraits <- extract_traits(
+#'   sp,
+#'   TRY,
+#'   rank = "species",
+#'   traits = c("LA", "LMA", "LeafN", "PlantHeight", "SeedMass", "SSD")
+#' )
 #'
-#' # Calculate without PCA analysis
-#' pnc(subtraits, BCI$phy_species, methods = "lambda", pca_axes = NULL)
+#' # Pagel's lambda with PCA
+#' pnc(
+#'   subtraits,
+#'   BCI$phy_species,
+#'   methods = "lambda"
+#' )
+#'
+#' # Pagel's lambda without PCA
+#' pnc(
+#'   subtraits,
+#'   BCI$phy_species,
+#'   methods = "lambda",
+#'   pca_axes = NULL
+#' )
 #' }
 #'
 #' @references
-#' Münkemüller, T., Lavergne, S., Bzeznik, B., Dray, S., Jombart, T., Schiffers, K. and Thuiller, W. (2012).
-#' How to measure and test phylogenetic signal. Methods in Ecology and Evolution, 3(4), 743-756.
+#' Münkemüller, T., Lavergne, S., Bzeznik, B., Dray, S., Jombart, T.,
+#' Schiffers, K. and Thuiller, W. (2012). How to measure and test
+#' phylogenetic signal. Methods in Ecology and Evolution, 3, 743-756.
 #' \doi{10.1111/j.2041-210X.2012.00196.x}
 #'
 #' @export
-#' @importFrom phytools phylosig
-#' @importFrom ape drop.tip
-#' @importFrom stats prcomp complete.cases
-#' @importFrom utils txtProgressBar setTxtProgressBar
-pnc <- function(trait_data, phylo_tree,
+pnc <- function(trait_data,
+                phylo_tree,
                 methods = "lambda",
                 pca_axes = c("PC1", "PC2"),
                 sig_levels = c(0.001, 0.01, 0.05),
                 nsim = 1000,
                 verbose = TRUE) {
+
+  # ---------------------------------------------------------------------------
+  # 1. Check inputs
+  # ---------------------------------------------------------------------------
+
   if (!is.data.frame(trait_data) && !is.matrix(trait_data)) {
-    stop("The trait_data must be a data frame or a matrix!")
+    stop("`trait_data` must be a data frame or matrix.")
   }
-  required_packages <- c("phytools", "ape")
-  for (pkg in required_packages) {
-    if (!base::requireNamespace(pkg, quietly = TRUE)) {
-      base::stop(base::paste("Package", pkg, "is required but not installed."))
-    }
+
+  trait_data <- as.data.frame(trait_data, check.names = FALSE)
+
+  if (nrow(trait_data) == 0 || ncol(trait_data) == 0) {
+    stop("`trait_data` must contain at least one species and one trait.")
   }
-  available_methods <- c("lambda", "K")
-  methods <- base::match.arg(methods, available_methods, several.ok = TRUE)
-  available_axes <- base::paste0("PC", 1:base::ncol(trait_data))
-  pca_axes <- base::intersect(pca_axes, available_axes)
-  results <- base::data.frame(
-    trait = base::character(),
-    coverage = base::character(),
-    n_sp = base::integer(),
-    signal = base::numeric(),
-    p = base::numeric(),
-    significance = base::character(),
-    method = base::character(),
-    stringsAsFactors = FALSE
+
+  if (anyDuplicated(rownames(trait_data))) {
+    stop("Species names in `trait_data` must be unique.")
+  }
+
+  if (anyDuplicated(phylo_tree$tip.label)) {
+    stop("Tip labels in `phylo_tree` must be unique.")
+  }
+
+  if (!inherits(phylo_tree, "phylo")) {
+    stop("`phylo_tree` must be an object of class `phylo`.")
+  }
+
+  numeric_traits <- vapply(trait_data, is.numeric, logical(1))
+
+  if (!all(numeric_traits)) {
+    stop(
+      "All trait columns must be numeric. Non-numeric traits: ",
+      paste(names(numeric_traits)[!numeric_traits], collapse = ", ")
+    )
+  }
+
+  if (length(intersect(rownames(trait_data), phylo_tree$tip.label)) == 0) {
+    stop("No species are shared between `trait_data` and `phylo_tree`.")
+  }
+
+  methods <- match.arg(
+    methods,
+    choices = c("lambda", "K"),
+    several.ok = TRUE
   )
-  trait_names <- base::colnames(trait_data)
-  n_traits <- base::length(trait_names)
+
+  if (!is.null(pca_axes) && !is.character(pca_axes)) {
+    stop("`pca_axes` must be a character vector or `NULL`.")
+  }
+
+  pca_axes <- unique(pca_axes)
+
+  if (
+    length(sig_levels) != 3 ||
+    any(!is.finite(sig_levels)) ||
+    any(diff(sig_levels) <= 0)
+  ) {
+    stop("`sig_levels` must contain three increasing significance thresholds.")
+  }
+
+  if (
+    length(nsim) != 1 ||
+    !is.finite(nsim) ||
+    nsim < 1
+  ) {
+    stop("`nsim` must be a positive integer.")
+  }
+
+  nsim <- as.integer(nsim)
+
+
+  # ---------------------------------------------------------------------------
+  # 2. Add PCA scores
+  # ---------------------------------------------------------------------------
+
+  analysis_data <- trait_data
+  pca_model <- NULL
   pca_results <- NULL
   pca_failed <- FALSE
-  if (base::length(pca_axes) > 0) {
-    complete_cases <- stats::complete.cases(trait_data)
-    if (base::sum(complete_cases) >= 4) {
-      complete_data <- trait_data[complete_cases, ]
-      base::tryCatch({
-        pca <- stats::prcomp(complete_data, scale. = TRUE, center = TRUE)
-        pca_scores <- base::as.data.frame(pca$x)
-        base::rownames(pca_scores) <- base::rownames(complete_data)
-        selected_pca <- pca_scores[, pca_axes, drop = FALSE]
-        pca_results <- selected_pca
-        trait_names <- c(trait_names, base::colnames(selected_pca))
-        n_traits <- base::length(trait_names)
-      }, error = function(e) {
-        if (verbose) {
-          base::warning("PCA analysis failed: ", e$message)
-        }
-        pca_failed <<- TRUE
-        trait_names <<- c(trait_names, pca_axes)
-        n_traits <<- base::length(trait_names)
-      })
-    } else {
-      if (verbose) {
-        base::warning("Insufficient complete data samples for PCA analysis")
-      }
-      pca_failed <- TRUE
-      trait_names <- c(trait_names, pca_axes)
-      n_traits <- base::length(trait_names)
-    }
-  }
-  get_significance <- function(p_value, levels = sig_levels) {
-    if (base::is.na(p_value)) return("")
-    if (p_value <= levels[1]) return("***")
-    else if (p_value <= levels[2]) return("**")
-    else if (p_value <= levels[3]) return("*")
-    else return("ns")
-  }
-  calculate_phylo_signal <- function(tree, trait_vector, method, nsim) {
-    base::tryCatch({
-      if (method == "lambda") {
-        result <- phytools::phylosig(tree, trait_vector, method = "lambda", test = TRUE, nsim = nsim)
-        return(base::list(signal = result$lambda, p = result$P))
-      } else if (method == "K") {
-        result <- phytools::phylosig(tree, trait_vector, method = "K", test = TRUE, nsim = nsim)
-        return(base::list(signal = result$K, p = result$P))
-      }
-    }, error = function(e) {
-      if (verbose) {
-        base::warning(base::paste("Error calculating", method, ":", e$message))
-      }
-      return(base::list(signal = NA, p = NA))
-    })
-  }
-  total_iterations <- n_traits * base::length(methods)
-  if (verbose) {
-    pb <- utils::txtProgressBar(min = 0, max = total_iterations, style = 3)
-    current_iteration <- 0
-  }
-  for (i in base::seq_along(trait_names)) {
-    trait_name <- trait_names[i]
-    if (trait_name %in% pca_axes) {
-      if (pca_failed || base::is.null(pca_results)) {
-        for (method in methods) {
-          results <- base::rbind(results, base::data.frame(
-            trait = trait_name,
-            coverage = NA,
-            n_sp = NA,
-            signal = NA,
-            p = NA,
-            significance = "",
-            method = method
-          ))
-          if (verbose) {
-            current_iteration <- current_iteration + 1
-            utils::setTxtProgressBar(pb, current_iteration)
-          }
-        }
-        next
-      } else {
-        trait_values <- pca_results[[trait_name]]
-        valid_species <- base::rownames(pca_results)
-        valid_trait <- trait_values
-        coverage <- base::paste0(base::round((base::length(valid_trait) / base::nrow(trait_data)) * 100, 2), " %")
-      }
-    } else {
-      trait_values <- trait_data[[trait_name]]
-      valid_indices <- !base::is.na(trait_values)
-      valid_trait <- trait_values[valid_indices]
-      valid_species <- base::rownames(trait_data)[valid_indices]
-      coverage <- base::paste0(base::round((base::length(valid_trait) / base::nrow(trait_data)) * 100, 2), " %")
-    }
-    n_sp <- base::length(valid_trait)
-    if (n_sp < 4) {
-      for (method in methods) {
-        results <- base::rbind(results, base::data.frame(
-          trait = trait_name,
-          coverage = coverage,
-          n_sp = n_sp,
-          signal = NA,
-          p = NA,
-          significance = "",
-          method = method
-        ))
-        if (verbose) {
-          current_iteration <- current_iteration + 1
-          utils::setTxtProgressBar(pb, current_iteration)
-        }
-      }
-      next
-    }
-    tree_species <- phylo_tree$tip.label
-    common_species <- base::intersect(valid_species, tree_species)
-    if (base::length(common_species) < 4) {
-      for (method in methods) {
-        results <- base::rbind(results, base::data.frame(
-          trait = trait_name,
-          coverage = coverage,
-          n_sp = n_sp,
-          signal = NA,
-          p = NA,
-          significance = "",
-          method = method
-        ))
-        if (verbose) {
-          current_iteration <- current_iteration + 1
-          utils::setTxtProgressBar(pb, current_iteration)
-        }
-      }
-      next
-    }
-    pruned_tree <- ape::drop.tip(phylo_tree,
-                                 phylo_tree$tip.label[!phylo_tree$tip.label %in% common_species])
-    trait_for_analysis <- valid_trait[valid_species %in% common_species]
-    base::names(trait_for_analysis) <- valid_species[valid_species %in% common_species]
-    trait_for_analysis <- trait_for_analysis[pruned_tree$tip.label]
-    for (method in methods) {
-      result <- calculate_phylo_signal(pruned_tree, trait_for_analysis, method, nsim)
-      sig_mark <- get_significance(result$p)
 
-      results <- base::rbind(results, base::data.frame(
+  if (length(pca_axes) > 0) {
+
+    complete_rows <- stats::complete.cases(trait_data)
+    complete_data <- trait_data[complete_rows, , drop = FALSE]
+
+    if (nrow(complete_data) < 4) {
+
+      pca_failed <- TRUE
+
+      if (verbose) {
+        warning(
+          "PCA was skipped because fewer than four species ",
+          "had complete trait data."
+        )
+      }
+
+    } else {
+
+      pca_model <- tryCatch(
+        stats::prcomp(
+          complete_data,
+          center = TRUE,
+          scale. = TRUE
+        ),
+        error = function(e) {
+
+          if (verbose) {
+            warning(
+              "PCA failed: ",
+              conditionMessage(e)
+            )
+          }
+
+          NULL
+        }
+      )
+
+      if (is.null(pca_model)) {
+        pca_failed <- TRUE
+      }
+    }
+
+    if (!pca_failed) {
+
+      pca_scores <- as.data.frame(
+        pca_model$x,
+        check.names = FALSE
+      )
+
+      available_axes <- intersect(
+        pca_axes,
+        colnames(pca_scores)
+      )
+
+      unavailable_axes <- setdiff(
+        pca_axes,
+        available_axes
+      )
+
+      if (length(unavailable_axes) > 0 && verbose) {
+        warning(
+          "Requested PCA axes were not available: ",
+          paste(unavailable_axes, collapse = ", ")
+        )
+      }
+
+      if (length(available_axes) > 0) {
+
+        pca_results <- pca_scores[
+          ,
+          available_axes,
+          drop = FALSE
+        ]
+
+        for (axis in available_axes) {
+
+          analysis_data[[axis]] <- NA_real_
+
+          analysis_data[
+            rownames(pca_results),
+            axis
+          ] <- pca_results[[axis]]
+        }
+      }
+    }
+  }
+
+
+  # ---------------------------------------------------------------------------
+  # 3. Helper functions
+  # ---------------------------------------------------------------------------
+
+  get_significance <- function(p) {
+
+    if (is.na(p)) {
+      return("")
+    }
+
+    if (p <= sig_levels[1]) {
+      "***"
+    } else if (p <= sig_levels[2]) {
+      "**"
+    } else if (p <= sig_levels[3]) {
+      "*"
+    } else {
+      "ns"
+    }
+  }
+
+
+  calculate_signal <- function(tree, trait, method) {
+
+    result <- tryCatch(
+
+      {
+        if (method == "lambda") {
+
+          phytools::phylosig(
+            tree,
+            trait,
+            method = "lambda",
+            test = TRUE
+          )
+
+        } else {
+
+          phytools::phylosig(
+            tree,
+            trait,
+            method = "K",
+            test = TRUE,
+            nsim = nsim
+          )
+        }
+      },
+
+      error = function(e) {
+
+        if (verbose) {
+          warning(
+            "Phylogenetic signal calculation failed for ",
+            method,
+            ": ",
+            conditionMessage(e)
+          )
+        }
+
+        NULL
+      }
+    )
+
+    if (is.null(result)) {
+      return(
+        list(
+          signal = NA_real_,
+          p = NA_real_
+        )
+      )
+    }
+
+    signal <- if (method == "lambda") {
+      result$lambda
+    } else {
+      result$K
+    }
+
+    list(
+      signal = signal,
+      p = result$P
+    )
+  }
+
+
+  # ---------------------------------------------------------------------------
+  # 4. Calculate phylogenetic signal
+  # ---------------------------------------------------------------------------
+
+  trait_names <- colnames(analysis_data)
+
+  result_list <- vector(
+    "list",
+    length(trait_names) * length(methods)
+  )
+
+  result_i <- 0L
+
+  for (trait_name in trait_names) {
+
+    trait_values <- analysis_data[[trait_name]]
+
+    coverage <- paste0(
+      round(
+        mean(!is.na(trait_values)) * 100,
+        2
+      ),
+      " %"
+    )
+
+    valid <- !is.na(trait_values)
+
+    trait_vector <- trait_values[valid]
+    species <- rownames(analysis_data)[valid]
+
+    names(trait_vector) <- species
+
+    common_species <- intersect(
+      species,
+      phylo_tree$tip.label
+    )
+
+    # Actual analytical sample size
+    n_sp <- length(common_species)
+
+    can_analyze <- n_sp >= 4
+
+    if (can_analyze) {
+
+      pruned_tree <- ape::drop.tip(
+        phylo_tree,
+        setdiff(
+          phylo_tree$tip.label,
+          common_species
+        )
+      )
+
+      trait_for_analysis <- trait_vector[
+        pruned_tree$tip.label
+      ]
+
+      if (length(unique(trait_for_analysis)) < 2) {
+
+        can_analyze <- FALSE
+
+        if (verbose) {
+          warning(
+            "Trait `",
+            trait_name,
+            "` has no variation after matching with the phylogeny."
+          )
+        }
+      }
+    }
+
+    for (method in methods) {
+
+      result_i <- result_i + 1L
+
+      if (can_analyze) {
+
+        signal_result <- calculate_signal(
+          pruned_tree,
+          trait_for_analysis,
+          method
+        )
+
+      } else {
+
+        signal_result <- list(
+          signal = NA_real_,
+          p = NA_real_
+        )
+      }
+
+      result_list[[result_i]] <- data.frame(
         trait = trait_name,
         coverage = coverage,
-        n_sp = base::length(common_species),
-        signal = result$signal,
-        p = result$p,
-        significance = sig_mark,
-        method = method
-      ))
-
-      if (verbose) {
-        current_iteration <- current_iteration + 1
-        utils::setTxtProgressBar(pb, current_iteration)
-      }
+        n_sp = n_sp,
+        signal = signal_result$signal,
+        p = signal_result$p,
+        significance = get_significance(signal_result$p),
+        method = method,
+        stringsAsFactors = FALSE
+      )
     }
   }
-  if (verbose) {
-    base::close(pb)
+
+
+  # ---------------------------------------------------------------------------
+  # 5. Return results
+  # ---------------------------------------------------------------------------
+
+  results <- do.call(
+    rbind,
+    result_list
+  )
+
+  rownames(results) <- NULL
+
+  attr(results, "methods") <- methods
+  attr(results, "pca_axes") <- pca_axes
+  attr(results, "pca_failed") <- pca_failed
+  attr(results, "sig_levels") <- sig_levels
+  attr(results, "nsim") <- nsim
+
+  if (!is.null(pca_results)) {
+    attr(results, "pca_results") <- pca_results
   }
-  base::attr(results, "methods") <- methods
-  base::attr(results, "pca_axes") <- pca_axes
-  base::attr(results, "pca_failed") <- pca_failed
-  base::attr(results, "sig_levels") <- sig_levels
-  base::attr(results, "nsim") <- nsim
-  if (!base::is.null(pca_results)) {
-    base::attr(results, "pca_results") <- pca_results
+
+  if (!is.null(pca_model)) {
+    attr(results, "pca_model") <- pca_model
   }
-  return(results)
+
+  results
 }

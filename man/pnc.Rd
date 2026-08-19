@@ -2,7 +2,7 @@
 % Please edit documentation in R/pnc.R
 \name{pnc}
 \alias{pnc}
-\title{Analyze Phylogenetic Niche Conservatism in Ecological Communities}
+\title{Estimate Phylogenetic Signal in Trait Data}
 \usage{
 pnc(
   trait_data,
@@ -15,51 +15,87 @@ pnc(
 )
 }
 \arguments{
-\item{trait_data}{A data frame or matrix containing trait data with species as rows}
+\item{trait_data}{A data frame or matrix containing continuous trait data,
+with species as rows and traits as columns. Species names must be stored
+as row names.}
 
-\item{phylo_tree}{A phylogenetic tree object of class "phylo"}
+\item{phylo_tree}{A phylogenetic tree object of class `"phylo"`.}
 
-\item{methods}{Character vector specifying methods to use. Options: "lambda", "K"}
+\item{methods}{Character vector specifying the phylogenetic signal metrics
+to calculate. Available options are `"lambda"` and `"K"`.}
 
-\item{pca_axes}{Character vector specifying which PCA axes to include (e.g., c("PC1", "PC2"))}
+\item{pca_axes}{Character vector specifying PCA axes to include, for example
+`c("PC1", "PC2")`. Set to `NULL` to skip PCA.}
 
-\item{sig_levels}{Numeric vector of significance levels for marking results}
+\item{sig_levels}{Numeric vector of three significance thresholds used to
+assign significance symbols.}
 
-\item{nsim}{Number of permutations for significance testing}
+\item{nsim}{Number of randomizations used for significance testing of
+Blomberg's K.}
 
-\item{verbose}{Logical indicating whether to show progress and warnings}
+\item{verbose}{Logical. If `TRUE`, warnings from PCA or phylogenetic signal
+estimation are reported.}
 }
 \value{
-A data frame containing phylogenetic signal results
+A data frame with one row for each trait-method combination:
+  \itemize{
+    \item `trait`: trait name or PCA axis.
+    \item `coverage`: percentage of species with available trait values.
+    \item `n_sp`: number of species actually included in the phylogenetic
+      signal analysis after matching trait data with the phylogeny.
+    \item `signal`: estimated phylogenetic signal.
+    \item `p`: P value.
+    \item `significance`: significance symbol.
+    \item `method`: phylogenetic signal metric.
+  }
 }
 \description{
-This function performs in-depth phylogenetic niche conservatism analysis for
-communities by quantifying phylogenetic signal in trait data using multiple statistical methods.
-The function integrates trait data preprocessing, phylogenetic tree manipulation,
-optional principal component analysis, and robust statistical testing to provide detailed insights
-into evolutionary constraints on trait evolution.
+`pnc()` estimates phylogenetic signal in functional traits for a given
+species pool. The function matches trait data with a phylogenetic tree,
+optionally summarizes multivariate trait variation using principal
+component analysis (PCA), and estimates phylogenetic signal using
+Pagel's lambda or Blomberg's K.
+}
+\details{
+Phylogenetic signal describes the tendency for related species to resemble
+one another in trait values. It can provide evidence relevant to
+phylogenetic niche conservatism, but does not by itself constitute a
+direct test of phylogenetic niche conservatism.
 }
 \examples{
-\dontrun{
-# Load example data
+\donttest{
 data(BCI)
 data(TRY)
 
-# Extract trait data
 sp <- colnames(BCI$com)
-subtraits <- extract_traits(sp, TRY, rank = "species",
-                            traits = c("LA", "LMA", "LeafN", "PlantHeight", "SeedMass", "SSD"))
 
-# Calculate phylogenetic signal using Lambda method
-pnc(subtraits, BCI$phy_species, methods = "lambda")
+subtraits <- extract_traits(
+  sp,
+  TRY,
+  rank = "species",
+  traits = c("LA", "LMA", "LeafN", "PlantHeight", "SeedMass", "SSD")
+)
 
-# Calculate without PCA analysis
-pnc(subtraits, BCI$phy_species, methods = "lambda", pca_axes = NULL)
+# Pagel's lambda with PCA
+pnc(
+  subtraits,
+  BCI$phy_species,
+  methods = "lambda"
+)
+
+# Pagel's lambda without PCA
+pnc(
+  subtraits,
+  BCI$phy_species,
+  methods = "lambda",
+  pca_axes = NULL
+)
 }
 
 }
 \references{
-Münkemüller, T., Lavergne, S., Bzeznik, B., Dray, S., Jombart, T., Schiffers, K. and Thuiller, W. (2012).
-How to measure and test phylogenetic signal. Methods in Ecology and Evolution, 3(4), 743-756.
+Münkemüller, T., Lavergne, S., Bzeznik, B., Dray, S., Jombart, T.,
+Schiffers, K. and Thuiller, W. (2012). How to measure and test
+phylogenetic signal. Methods in Ecology and Evolution, 3, 743-756.
 \doi{10.1111/j.2041-210X.2012.00196.x}
 }

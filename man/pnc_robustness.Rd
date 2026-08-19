@@ -2,94 +2,136 @@
 % Please edit documentation in R/pnc_robustness.R
 \name{pnc_robustness}
 \alias{pnc_robustness}
-\title{Test Robustness of Phylogenetic Niche Conservatism Analysis}
+\title{Assess Sensitivity of Phylogenetic Signal to Missing Trait Data}
 \usage{
 pnc_robustness(
   trait_data,
   phylo_tree,
-  methods = "lambda",
-  pca_axes = c("PC1", "PC2"),
   n_simulations = 100,
   alpha_level = 0.05,
-  tolerance = 0.05
+  verbose = TRUE
 )
 }
 \arguments{
-\item{trait_data}{A data frame or matrix containing trait data with species as rows}
+\item{trait_data}{A data frame or matrix containing continuous trait data,
+with species as rows and traits as columns. Species names must be stored
+as row names.}
 
-\item{phylo_tree}{A phylogenetic tree object of class "phylo"}
+\item{phylo_tree}{A phylogenetic tree object of class `"phylo"`.}
 
-\item{methods}{Character string specifying method to use. Options: "lambda" or "K".
-Default is "lambda"}
+\item{n_simulations}{Number of paired simulations performed for each trait.
+Default is 100.}
 
-\item{pca_axes}{Character vector specifying which PCA axes to include (e.g., c("PC1", "PC2")).
-Default is c("PC1", "PC2")}
+\item{alpha_level}{Significance threshold used to compare statistical
+conclusions between complete and incomplete simulated data.
+Default is 0.05.}
 
-\item{n_simulations}{Integer. Number of simulations to run for robustness testing.
-Default is 100}
-
-\item{alpha_level}{Numeric. Significance level for statistical testing.
-Default is 0.05}
-
-\item{tolerance}{Numeric. Acceptable difference between target and estimated signal
-values during trait simulation. Default is 0.05}
+\item{verbose}{Logical. If `TRUE`, a progress bar and warnings are shown.
+Default is `TRUE`.}
 }
 \value{
-A data frame containing the original phylogenetic signal results with
-  additional columns:
+A data frame containing the observed phylogenetic signal results
+  from `pnc()` and the following sensitivity metrics:
   \itemize{
-    \item robustness: Percentage of simulations that maintain the same statistical
-          significance conclusion as the original analysis
-    \item signal_sd: Standard deviation of phylogenetic signal values across
-          successful simulations
+    \item `simulation_lambda`: lambda value used to generate simulated trait
+      data. This equals the observed lambda unless the latter exceeds the
+      maximum supported by the reference phylogeny.
+    \item `consistency`: percentage of successful simulations in which
+      complete and incomplete data produced the same significance
+      conclusion.
+    \item `signal_bias`: mean paired difference between lambda estimated
+      from incomplete and complete simulated data
+      (`lambda_missing - lambda_complete`).
+    \item `signal_sd`: standard deviation of the paired lambda differences.
+    \item `n_successful`: number of simulations in which both complete and
+      incomplete analyses were successfully estimated.
   }
-  Returns the enhanced results from the baseline pnc() analysis
 }
 \description{
-This function evaluates the robustness of phylogenetic signal estimates by simulating
-trait data with the same phylogenetic signal strength as observed, applying the
-original missing data pattern, and testing how consistently the statistical
-significance is recovered across multiple simulations.
+`pnc_robustness()` evaluates how the observed pattern of missing trait data
+affects inference of phylogenetic signal based on Pagel's lambda.
 }
 \details{
-The robustness testing procedure involves:
+For each trait, the observed lambda is first estimated using `pnc()`.
+Complete trait data are then simulated under Brownian motion on a reference
+phylogeny transformed according to the observed lambda. Each simulated trait
+is analyzed twice: first using all species in the reference species pool, and
+then after applying the observed missing-data pattern of the focal trait.
 
-1. Performing baseline phylogenetic signal analysis using pnc()
+If the observed lambda exceeds the maximum value supported by the reference
+phylogeny, the largest valid lambda for that reference phylogeny is used for
+simulation. The observed lambda estimate itself is not modified.
 
-2. For each trait, simulating new trait data with the same phylogenetic signal
-   strength as observed in the original data
+The paired difference between the two analyses quantifies the effect of
+trait-data incompleteness on phylogenetic signal estimation.
 
-3. Applying the exact missing data pattern from the original dataset to the
-   simulated data
 
-4. Re-testing phylogenetic signal on the simulated data and recording p-values
+The analysis is performed separately for each original trait.
 
-5. Calculating the percentage of simulations that maintain the same statistical
-   significance conclusion (significant vs. non-significant)
+The simulation is conditional on the lambda estimated from the observed
+data. The reference phylogeny is transformed according to this lambda, and
+trait values are simulated under Brownian motion on the transformed tree.
 
-The function uses simulate_lambda_trait() or simulate_K_trait() internally to
-generate trait data with target phylogenetic signal values.
+The maximum valid lambda depends on the branch-length structure of the
+reference phylogeny. Consequently, an observed lambda estimated from a
+trait-specific pruned tree may occasionally exceed the maximum value that
+can be applied to the larger reference phylogeny. In this case,
+`pnc_robustness()` identifies the largest valid lambda numerically and uses
+that value only for simulation. A warning is issued when this adjustment
+occurs.
 
-For PCA axes, the missing data pattern corresponds to complete cases from the
-original trait matrix. For individual traits, the original missing pattern is
-preserved exactly.
+Each simulated trait is analyzed before and after applying the observed
+missing-data pattern. Because the same simulated trait is used in both
+analyses, differences between them reflect the effect of trait-data
+incompleteness.
+
+Simulated lambda estimates are not forced to equal the observed lambda.
+Their natural stochastic variation is retained.
+
+Repeated Pagel's lambda estimation is accelerated by caching the
+phylogeny-specific covariance structure and using an algebraically
+equivalent spectral representation of the likelihood. This changes the
+numerical implementation but not the Pagel's lambda likelihood,
+likelihood-ratio test, or P value.
+
+PCA axes are not included because evaluating their missing-data sensitivity
+would require multivariate trait simulation that preserves covariance among
+traits together with trait-specific missing-data patterns.
+
+Blomberg's K is not used as the generating parameter because K is a
+Brownian-motion-referenced summary statistic rather than a direct parameter
+of the trait-generating model.
 }
 \examples{
-\dontrun{
-# Load example data
+\donttest{
 data(BCI)
 data(TRY)
 
-# Extract trait data
 sp <- colnames(BCI$com)
-subtraits <- extract_traits(sp, TRY, rank = "species",
-                          traits = c("LA", "LMA", "LeafN", "PlantHeight"))
 
-# Test robustness of phylogenetic signal analysis
-robust_results <- pnc_robustness(subtraits, BCI$phy_species,
-                                methods = "lambda", n_simulations = 100)
-robust_results
+subtraits <- extract_traits(
+  sp,
+  TRY,
+  rank = "species",
+  traits = c("LA", "LMA", "LeafN", "PlantHeight")
+)
+
+set.seed(123)
+
+pnc_robustness(
+  subtraits,
+  BCI$phy_species,
+  n_simulations = 100
+)
 }
 
+}
+\references{
+Pagel, M. (1999). Inferring the historical patterns of biological
+evolution. Nature, 401, 877-884.
 
+Münkemüller, T., Lavergne, S., Bzeznik, B., Dray, S., Jombart, T.,
+Schiffers, K. and Thuiller, W. (2012). How to measure and test
+phylogenetic signal. Methods in Ecology and Evolution, 3, 743-756.
+\doi{10.1111/j.2041-210X.2012.00196.x}
 }
