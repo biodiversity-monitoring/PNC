@@ -2,64 +2,97 @@
 % Please edit documentation in R/extract_traits.R
 \name{extract_traits}
 \alias{extract_traits}
-\title{Extract Plant Traits from Trait Database}
+\title{Extract Traits from a Trait Database}
 \usage{
 extract_traits(sp.list, dataset, rank = "species", traits = NULL)
 }
 \arguments{
-\item{sp.list}{A character vector containing the names of taxa to extract traits for.
-The names should match the taxonomic rank specified in the 'rank' parameter.}
+\item{sp.list}{Character vector containing the taxa to extract. Taxon names
+should correspond to the taxonomic rank specified by `rank`.}
 
-\item{dataset}{A data frame containing trait data. Default is TRY database.
-Must contain columns named "species", "genus", and "family" for taxonomic information.}
+\item{dataset}{A data frame or tibble containing taxonomic information and
+trait data. The column corresponding to `rank` must be present. Columns
+named `"species"`, `"genus"`, and `"family"` are treated as taxonomic
+columns rather than traits.}
 
-\item{rank}{A character string specifying the taxonomic rank to match against.
-Must be one of "species", "genus", or "family". Default is "species".}
+\item{rank}{Taxonomic rank used for matching taxa. Must be one of
+`"species"`, `"genus"`, or `"family"`. Default is `"species"`.}
 
-\item{traits}{A character vector specifying which traits to extract. If NULL (default),
-all available traits in the dataset will be extracted. Available traits are all
-columns except "species", "genus", and "family".}
+\item{traits}{Character vector specifying the traits to extract. If `NULL`,
+all non-taxonomic columns are extracted.}
 }
 \value{
-A data frame with taxa names as row names and trait names as column names.
-  For species-level extraction, returns the first occurrence of each species.
-  For genus/family-level extraction, returns mean values for numeric traits
-  and the first occurrence for non-numeric traits. Missing values are represented as NA.
+A data frame with taxa as row names and traits as columns. Taxa not
+  found in the dataset are retained as rows with missing trait values.
 }
 \description{
-This function extracts plant trait data from the TRY database or similar datasets
-for a specified list of taxa at different taxonomic ranks (species, genus, or family).
-For numeric traits at genus and family levels, it calculates mean values across
-all available records.
+`extract_traits()` extracts trait data for a specified list of taxa from a
+trait database at the species, genus, or family level.
 }
 \details{
-The function performs the following operations:
-\itemize{
-  \item Validates input parameters
-  \item Identifies available traits in the dataset
-  \item Matches input taxa with dataset entries
-  \item Reports missing taxa
-  \item Extracts trait data based on the specified taxonomic rank
-  \item For numeric traits at genus/family level, calculates mean values
-  \item For non-numeric traits, uses the first available value
-  \item Handles NaN values by converting them to NA
-}
+At the species level, trait values are taken from the first matching record.
+At the genus and family levels, numeric traits are averaged across all
+available records within each taxon. For non-numeric traits, the first
+non-missing value is returned.
+
+
+At the species level, the first matching record is used when duplicate
+species records occur in the dataset.
+
+At the genus and family levels, numeric traits are averaged across available
+records using `na.rm = TRUE`. If all values for a numeric trait are missing,
+`NA` is returned. For non-numeric traits, the first non-missing value is
+returned.
+
+Requested traits that are not present in the dataset are ignored with a
+warning. The function stops if none of the requested traits are available.
 }
 \examples{
-# Load the dataset
 data(TRY)
 
-# Extract all traits for species
-species_list <- c("Acaena novae-zelandiae", "Adiantum capillus-veneris", "Zuelania guidonia")
-extract_traits(species_list, TRY, rank = "species")
+species_list <- c(
+  "Acaena novae-zelandiae",
+  "Adiantum capillus-veneris",
+  "Zuelania guidonia"
+)
 
-# Extract specific traits for species
-extract_traits(species_list, TRY, rank = "species",
-               traits = c("LA", "LMA", "LeafN", "PlantHeight", "SeedMass", "SSD"))
+# Extract all available traits
+extract_traits(
+  species_list,
+  TRY,
+  rank = "species"
+)
 
-# Extract specific traits at genus level
-genus_list <- c("Acaena", "Adiantum")
-extract_traits(genus_list, TRY, rank = "genus",
-               traits = c("LDMC", "PlantHeight", "SeedMass"))
+# Extract selected traits
+extract_traits(
+  species_list,
+  TRY,
+  rank = "species",
+  traits = c(
+    "LA",
+    "LMA",
+    "LeafN",
+    "PlantHeight",
+    "SeedMass",
+    "SSD"
+  )
+)
+
+# Extract traits at the genus level
+genus_list <- c(
+  "Acaena",
+  "Adiantum"
+)
+
+extract_traits(
+  genus_list,
+  TRY,
+  rank = "genus",
+  traits = c(
+    "LDMC",
+    "PlantHeight",
+    "SeedMass"
+  )
+)
 
 }

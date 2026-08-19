@@ -1,142 +1,364 @@
-#' Merge Two Datasets Based on Species Column
+#' Merge Two Trait Datasets by Species
 #'
-#' This function merges two data frames based on the 'species' column, handling
-#' missing values and column differences intelligently. It provides flexible
-#' options for resolving conflicts when the same species appears in both datasets.
+#' `merge_dataset()` combines two trait datasets using the `species` column as
+#' the matching key. Species and variables occurring in either dataset are
+#' retained, and missing or conflicting values are resolved according to the
+#' selected priority rule.
 #'
-#' @param main_data A data frame containing the primary dataset. Must include a 'species' column.
-#' @param additional_data A data frame containing the secondary dataset. Must include a 'species' column.
-#' @param priority A character string specifying how to handle conflicts when both datasets
-#'   contain non-missing values for the same species and column. Options are:
+#' @param main_data A data frame containing the primary dataset. It must include
+#'   a column named `"species"`.
+#' @param additional_data A data frame containing the additional dataset. It
+#'   must include a column named `"species"`.
+#' @param priority Character string specifying how conflicts are resolved when
+#'   both datasets contain non-missing values for the same species and variable.
+#'   Available options are:
 #'   \itemize{
-#'     \item \code{"main"} (default): Use values from main_data
-#'     \item \code{"additional"}: Use values from additional_data
-#'     \item \code{"mean"}: Calculate mean for numeric values, use main_data for non-numeric
+#'     \item `"main"`: retain the value from `main_data` (default).
+#'     \item `"additional"`: retain the value from `additional_data`.
+#'     \item `"mean"`: use the arithmetic mean when the corresponding columns
+#'       in both datasets are numeric; otherwise retain the value from
+#'       `main_data`.
 #'   }
 #'
-#' @return A data frame containing all unique species from both input datasets, with
-#'   all columns from both datasets. The 'species' column is placed first, followed
-#'   by all other columns in alphabetical order.
+#' @return A data frame containing all unique species and all variables present
+#'   in either input dataset. The `species` column is placed first. Other
+#'   columns retain their order from `main_data`, followed by columns occurring
+#'   only in `additional_data`.
 #'
 #' @details
-#' The function performs the following operations:
-#' \itemize{
-#'   \item Combines all unique species from both datasets
-#'   \item Includes all columns from both datasets
-#'   \item Handles missing values by using available non-missing values
-#'   \item Resolves conflicts based on the specified priority
-#'   \item For duplicate species within a dataset, only the first occurrence is used
-#' }
+#' For a given species and variable, a non-missing value is always retained when
+#' the corresponding value in the other dataset is missing. The `priority`
+#' argument is used only when both datasets contain non-missing values.
+#'
+#' If a species occurs more than once within an input dataset, only its first
+#' occurrence is used.
+#'
+#' With `priority = "mean"`, averaging is performed only when the corresponding
+#' columns in both datasets are numeric.
 #'
 #' @examples
-#' # Create sample datasets
 #' main_data <- data.frame(
-#'   species = c("Abies alba", "Coussapoa trinervia", "Crataegus monogyna"),
-#'   genus = c("Abies", "Coussapoa", "Crataegus"),
-#'   family = c("Pinaceae", "Urticaceae", "Rosaceae"),
+#'   species = c(
+#'     "Abies alba",
+#'     "Coussapoa trinervia",
+#'     "Crataegus monogyna"
+#'   ),
+#'   genus = c(
+#'     "Abies",
+#'     "Coussapoa",
+#'     "Crataegus"
+#'   ),
+#'   family = c(
+#'     "Pinaceae",
+#'     "Urticaceae",
+#'     "Rosaceae"
+#'   ),
 #'   LA = c(NA, 2050.24, 449.15),
 #'   LeafN = c(13.10, 14.52, 17.46),
-#'   Seedmass = c(53.64, NA, 95.92),
+#'   SeedMass = c(53.64, NA, 95.92),
 #'   stringsAsFactors = FALSE
 #' )
 #'
 #' additional_data <- data.frame(
-#'   species = c("Abies alba", "Corydalis solida"),
-#'   genus = c("Abies", "Corydalis"),
-#'   family = c("Pinaceae", "Papaveraceae"),
+#'   species = c(
+#'     "Abies alba",
+#'     "Corydalis solida"
+#'   ),
+#'   genus = c(
+#'     "Abies",
+#'     "Corydalis"
+#'   ),
+#'   family = c(
+#'     "Pinaceae",
+#'     "Papaveraceae"
+#'   ),
 #'   LA = c(25.58, NA),
-#'   LMA = c(0.19, 0.2),
+#'   LMA = c(0.19, 0.20),
 #'   PlantHeight = c(53.66, 0.14),
 #'   stringsAsFactors = FALSE
 #' )
 #'
-#' # Merge with main data priority (default)
-#' merge_dataset(main_data, additional_data)
+#' merge_dataset(
+#'   main_data,
+#'   additional_data
+#' )
+#'
+#' merge_dataset(
+#'   main_data,
+#'   additional_data,
+#'   priority = "mean"
+#' )
 #'
 #' @export
-#'
-#' @importFrom stats na.omit
-#'
-#' @note
-#' \itemize{
-#'   \item Both input datasets must contain a 'species' column
-#'   \item If a species appears multiple times in a dataset, only the first occurrence is used
-#'   \item When priority is "mean", non-numeric values default to main_data values
-#'   \item The function preserves the original data types of columns
-#' }
-merge_dataset <- function(main_data, additional_data, priority = "main") {
-  if (!is.data.frame(main_data) || !is.data.frame(additional_data)) {
-    stop("main_data and additional_data must be data frames.", call. = FALSE)
-  }
-  if (!"species" %in% names(main_data) || !"species" %in% names(additional_data)) {
-    stop("Both datasets must contain the 'species' column.", call. = FALSE)
-  }
-  if (!priority %in% c("main", "additional", "mean")) {
-    stop("The priority parameter must be one of 'main', 'additional', or 'mean'.",
-         call. = FALSE)
-  }
-  all_species <- base::unique(c(main_data$species, additional_data$species))
-  all_columns <- base::unique(c(names(main_data), names(additional_data)))
-  result <- data.frame(
-    matrix(NA, nrow = length(all_species), ncol = length(all_columns)),
-    stringsAsFactors = FALSE
-  )
-  names(result) <- all_columns
-  result$species <- all_species
-  merge_values <- function(main_val, add_val, priority) {
-    if (base::is.na(main_val) && base::is.na(add_val)) {
-      return(NA)
-    }
-    if (base::is.na(main_val) && !base::is.na(add_val)) {
-      return(add_val)
-    }
-    if (!base::is.na(main_val) && base::is.na(add_val)) {
-      return(main_val)
-    }
-    if (!base::is.na(main_val) && !base::is.na(add_val)) {
-      switch(priority,
-             "main" = main_val,
-             "additional" = add_val,
-             "mean" = {
-               if (is.numeric(main_val) && is.numeric(add_val)) {
-                 (main_val + add_val) / 2
-               } else {
-                 main_val
-               }
-             }
-      )
-    }
-  }
-  for (species in all_species) {
-    main_rows <- base::which(main_data$species == species)
-    add_rows <- base::which(additional_data$species == species)
-    main_row <- if (length(main_rows) > 0) main_rows[1] else NA
-    add_row <- if (length(add_rows) > 0) add_rows[1] else NA
-    result_row <- base::which(result$species == species)
-    for (col in all_columns) {
-      if (col == "species") {
-        next
-      }
-      main_val <- if (!base::is.na(main_row) && col %in% names(main_data)) {
-        main_data[main_row, col]
-      } else {
-        NA
-      }
-      add_val <- if (!base::is.na(add_row) && col %in% names(additional_data)) {
-        additional_data[add_row, col]
-      } else {
-        NA
-      }
-      result[result_row, col] <- merge_values(main_val, add_val, priority)
-    }
-  }
-  species_col <- result$species
-  other_cols <- result[, !names(result) %in% "species", drop = FALSE]
-  result <- data.frame(
-    species = species_col,
-    other_cols,
-    stringsAsFactors = FALSE
-  )
-  return(result)
-}
+merge_dataset <- function(main_data,
+                          additional_data,
+                          priority = "main") {
 
+  # ---------------------------------------------------------------------------
+  # 1. Check inputs
+  # ---------------------------------------------------------------------------
+
+  if (!is.data.frame(main_data)) {
+    stop("`main_data` must be a data frame.")
+  }
+
+  if (!is.data.frame(additional_data)) {
+    stop("`additional_data` must be a data frame.")
+  }
+
+  if (!"species" %in% names(main_data)) {
+    stop("`main_data` must contain a `species` column.")
+  }
+
+  if (!"species" %in% names(additional_data)) {
+    stop("`additional_data` must contain a `species` column.")
+  }
+
+  priority <- match.arg(
+    priority,
+    choices = c("main", "additional", "mean")
+  )
+
+  if (
+    anyNA(main_data$species) ||
+    any(!nzchar(as.character(main_data$species)))
+  ) {
+    stop(
+      "`main_data$species` must contain non-missing, non-empty species names."
+    )
+  }
+
+  if (
+    anyNA(additional_data$species) ||
+    any(!nzchar(as.character(additional_data$species)))
+  ) {
+    stop(
+      "`additional_data$species` must contain non-missing, non-empty species names."
+    )
+  }
+
+
+  # ---------------------------------------------------------------------------
+  # 2. Prepare datasets
+  # ---------------------------------------------------------------------------
+
+  main_data$species <- as.character(main_data$species)
+  additional_data$species <- as.character(additional_data$species)
+
+  if (anyDuplicated(main_data$species)) {
+
+    warning(
+      "Duplicate species were found in `main_data`; ",
+      "only the first occurrence of each species was used.",
+      call. = FALSE
+    )
+
+    main_data <- main_data[
+      !duplicated(main_data$species),
+      ,
+      drop = FALSE
+    ]
+  }
+
+  if (anyDuplicated(additional_data$species)) {
+
+    warning(
+      "Duplicate species were found in `additional_data`; ",
+      "only the first occurrence of each species was used.",
+      call. = FALSE
+    )
+
+    additional_data <- additional_data[
+      !duplicated(additional_data$species),
+      ,
+      drop = FALSE
+    ]
+  }
+
+  main_data[] <- lapply(
+    main_data,
+    function(x) {
+      if (is.factor(x)) {
+        as.character(x)
+      } else {
+        x
+      }
+    }
+  )
+
+  additional_data[] <- lapply(
+    additional_data,
+    function(x) {
+      if (is.factor(x)) {
+        as.character(x)
+      } else {
+        x
+      }
+    }
+  )
+
+
+  # ---------------------------------------------------------------------------
+  # 3. Define species and variables
+  # ---------------------------------------------------------------------------
+
+  all_species <- unique(
+    c(
+      main_data$species,
+      additional_data$species
+    )
+  )
+
+  all_columns <- unique(
+    c(
+      names(main_data),
+      names(additional_data)
+    )
+  )
+
+  trait_columns <- setdiff(
+    all_columns,
+    "species"
+  )
+
+  main_index <- match(
+    all_species,
+    main_data$species
+  )
+
+  additional_index <- match(
+    all_species,
+    additional_data$species
+  )
+
+  result <- data.frame(
+    species = all_species,
+    stringsAsFactors = FALSE,
+    check.names = FALSE
+  )
+
+
+  # ---------------------------------------------------------------------------
+  # 4. Merge variables
+  # ---------------------------------------------------------------------------
+
+  for (column in trait_columns) {
+
+    in_main <- column %in% names(main_data)
+    in_additional <- column %in% names(additional_data)
+
+
+    # Variable occurs only in main_data
+    if (in_main && !in_additional) {
+
+      result[[column]] <- main_data[[column]][main_index]
+
+      next
+    }
+
+
+    # Variable occurs only in additional_data
+    if (!in_main && in_additional) {
+
+      result[[column]] <- additional_data[[column]][additional_index]
+
+      next
+    }
+
+
+    # Variable occurs in both datasets
+    main_values <- main_data[[column]][main_index]
+
+    additional_values <- additional_data[[column]][additional_index]
+
+    main_available <- !is.na(main_values)
+
+    additional_available <- !is.na(additional_values)
+
+
+    # -------------------------------------------------------------------------
+    # Mean priority for numeric columns
+    # -------------------------------------------------------------------------
+
+    if (
+      priority == "mean" &&
+      is.numeric(main_data[[column]]) &&
+      is.numeric(additional_data[[column]])
+    ) {
+
+      merged_values <- rep(
+        NA_real_,
+        length(all_species)
+      )
+
+      use_main <- main_available &
+        !additional_available
+
+      merged_values[use_main] <- main_values[use_main]
+
+      use_additional <- !main_available &
+        additional_available
+
+      merged_values[use_additional] <-
+        additional_values[use_additional]
+
+      use_mean <- main_available &
+        additional_available
+
+      merged_values[use_mean] <-
+        (
+          main_values[use_mean] +
+            additional_values[use_mean]
+        ) / 2
+
+      result[[column]] <- merged_values
+
+      next
+    }
+
+
+    # -------------------------------------------------------------------------
+    # Main priority
+    # -------------------------------------------------------------------------
+
+    if (
+      priority == "main" ||
+      priority == "mean"
+    ) {
+
+      merged_values <- main_values
+
+      use_additional <- !main_available &
+        additional_available
+
+      merged_values[use_additional] <-
+        additional_values[use_additional]
+
+      result[[column]] <- merged_values
+
+      next
+    }
+
+
+    # -------------------------------------------------------------------------
+    # Additional priority
+    # -------------------------------------------------------------------------
+
+    merged_values <- additional_values
+
+    use_main <- !additional_available &
+      main_available
+
+    merged_values[use_main] <-
+      main_values[use_main]
+
+    result[[column]] <- merged_values
+  }
+
+
+  # ---------------------------------------------------------------------------
+  # 5. Return results
+  # ---------------------------------------------------------------------------
+
+  result
+}

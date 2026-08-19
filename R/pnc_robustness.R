@@ -6,20 +6,17 @@
 #' For each trait, the observed lambda is first estimated using `pnc()`.
 #' Complete trait data are then simulated under Brownian motion on a reference
 #' phylogeny transformed according to the observed lambda. Each simulated trait
-#' is analyzed twice: first using all species in the reference species pool, and
-#' then after applying the observed missing-data pattern of the focal trait.
+#' is analyzed twice: first using all species in the reference species pool,
+#' and then after applying the observed missing-data pattern of the focal trait.
 #'
-#' If the observed lambda exceeds the maximum value supported by the reference
-#' phylogeny, the largest valid lambda for that reference phylogeny is used for
-#' simulation. The observed lambda estimate itself is not modified.
-#'
-#' The paired difference between the two analyses quantifies the effect of
-#' trait-data incompleteness on phylogenetic signal estimation.
+#' The paired comparison isolates the effect of trait-data incompleteness on
+#' phylogenetic signal estimation.
 #'
 #' @param trait_data A data frame or matrix containing continuous trait data,
 #'   with species as rows and traits as columns. Species names must be stored
 #'   as row names.
-#' @param phylo_tree A phylogenetic tree object of class `"phylo"`.
+#' @param phylo_tree A phylogenetic tree object of class `"phylo"` with branch
+#'   lengths.
 #' @param n_simulations Number of paired simulations performed for each trait.
 #'   Default is 100.
 #' @param alpha_level Significance threshold used to compare statistical
@@ -34,9 +31,8 @@
 #'     \item `simulation_lambda`: lambda value used to generate simulated trait
 #'       data. This equals the observed lambda unless the latter exceeds the
 #'       maximum supported by the reference phylogeny.
-#'     \item `consistency`: percentage of successful simulations in which
-#'       complete and incomplete data produced the same significance
-#'       conclusion.
+#'     \item `consistency`: percentage of successful paired simulations in which
+#'       complete and incomplete data produced the same significance conclusion.
 #'     \item `signal_bias`: mean paired difference between lambda estimated
 #'       from incomplete and complete simulated data
 #'       (`lambda_missing - lambda_complete`).
@@ -46,33 +42,36 @@
 #'   }
 #'
 #' @details
-#' The analysis is performed separately for each original trait.
+#' The analysis is performed separately for each original trait. The reference
+#' species pool consists of species represented in both `trait_data` and
+#' `phylo_tree`. Species without observed values for the focal trait are retained
+#' in the complete simulated data and removed only when the empirical
+#' missing-data pattern is applied.
 #'
-#' The simulation is conditional on the lambda estimated from the observed
-#' data. The reference phylogeny is transformed according to this lambda, and
-#' trait values are simulated under Brownian motion on the transformed tree.
+#' For each trait, simulation is conditional on the Pagel's lambda estimated
+#' from the observed data. The reference phylogeny is transformed according to
+#' this lambda, and trait values are simulated under Brownian motion on the
+#' transformed tree.
 #'
 #' The maximum valid lambda depends on the branch-length structure of the
-#' reference phylogeny. Consequently, an observed lambda estimated from a
-#' trait-specific pruned tree may occasionally exceed the maximum value that
-#' can be applied to the larger reference phylogeny. In this case,
-#' `pnc_robustness()` identifies the largest valid lambda numerically and uses
-#' that value only for simulation. A warning is issued when this adjustment
-#' occurs.
+#' reference phylogeny. An observed lambda estimated from a trait-specific
+#' pruned tree may occasionally exceed the maximum value that can be applied
+#' to the larger reference phylogeny. In this case, the largest valid lambda
+#' for the reference phylogeny is used only for simulation. The observed lambda
+#' estimate itself is not modified.
 #'
 #' Each simulated trait is analyzed before and after applying the observed
-#' missing-data pattern. Because the same simulated trait is used in both
-#' analyses, differences between them reflect the effect of trait-data
-#' incompleteness.
+#' missing-data pattern. Because both analyses use the same simulated trait,
+#' their paired difference reflects the effect of trait-data incompleteness
+#' rather than stochastic differences among simulations.
 #'
 #' Simulated lambda estimates are not forced to equal the observed lambda.
 #' Their natural stochastic variation is retained.
 #'
 #' Repeated Pagel's lambda estimation is accelerated by caching the
 #' phylogeny-specific covariance structure and using an algebraically
-#' equivalent spectral representation of the likelihood. This changes the
-#' numerical implementation but not the Pagel's lambda likelihood,
-#' likelihood-ratio test, or P value.
+#' equivalent spectral representation of the likelihood. If the fast
+#' calculation fails, `phytools::phylosig()` is used as a fallback.
 #'
 #' PCA axes are not included because evaluating their missing-data sensitivity
 #' would require multivariate trait simulation that preserves covariance among
@@ -101,7 +100,7 @@
 #' pnc_robustness(
 #'   subtraits,
 #'   BCI$phy_species,
-#'   n_simulations = 100
+#'   n_simulations = 10
 #' )
 #' }
 #'
@@ -114,10 +113,8 @@
 #' phylogenetic signal. Methods in Ecology and Evolution, 3, 743-756.
 #' \doi{10.1111/j.2041-210X.2012.00196.x}
 #'
-#' @importFrom utils txtProgressBar setTxtProgressBar
-#' @import geiger
-#'
 #' @export
+#' @import geiger
 pnc_robustness <- function(trait_data,
                            phylo_tree,
                            n_simulations = 100,
@@ -128,8 +125,24 @@ pnc_robustness <- function(trait_data,
   # 1. Check inputs
   # ---------------------------------------------------------------------------
 
+  if (!is.data.frame(trait_data) && !is.matrix(trait_data)) {
+    stop("`trait_data` must be a data frame or matrix.")
+  }
+
   if (!inherits(phylo_tree, "phylo")) {
-    stop("`phylo_tree` must be an object of class 'phylo'.")
+    stop("`phylo_tree` must be an object of class `phylo`.")
+  }
+
+  trait_species <- rownames(trait_data)
+
+  if (
+    is.null(trait_species) ||
+    identical(
+      trait_species,
+      as.character(seq_len(nrow(trait_data)))
+    )
+  ) {
+    stop("`trait_data` must have species names as row names.")
   }
 
   trait_data <- as.data.frame(
@@ -137,12 +150,81 @@ pnc_robustness <- function(trait_data,
     check.names = FALSE
   )
 
-  if (is.null(rownames(trait_data))) {
-    stop("`trait_data` must have species names as row names.")
+  if (nrow(trait_data) == 0 || ncol(trait_data) == 0) {
+    stop(
+      "`trait_data` must contain at least one species and one trait."
+    )
   }
 
   if (anyDuplicated(rownames(trait_data))) {
-    stop("Species names in `trait_data` must be unique.")
+    stop(
+      "Species names in `trait_data` must be unique."
+    )
+  }
+
+  if (anyDuplicated(colnames(trait_data))) {
+    stop(
+      "Trait names in `trait_data` must be unique."
+    )
+  }
+
+  if (anyDuplicated(phylo_tree$tip.label)) {
+    stop(
+      "Tip labels in `phylo_tree` must be unique."
+    )
+  }
+
+  numeric_traits <- vapply(
+    trait_data,
+    is.numeric,
+    logical(1)
+  )
+
+  if (!all(numeric_traits)) {
+    stop(
+      "All trait columns must be numeric. Non-numeric traits: ",
+      paste(
+        names(numeric_traits)[!numeric_traits],
+        collapse = ", "
+      )
+    )
+  }
+
+  non_finite_traits <- vapply(
+    trait_data,
+    function(x) {
+      any(
+        !is.na(x) &
+          !is.finite(x)
+      )
+    },
+    logical(1)
+  )
+
+  if (any(non_finite_traits)) {
+    stop(
+      "Trait data contain non-finite values in: ",
+      paste(
+        names(non_finite_traits)[non_finite_traits],
+        collapse = ", "
+      ),
+      "."
+    )
+  }
+
+  if (is.null(phylo_tree$edge.length)) {
+    stop(
+      "`phylo_tree` must contain branch lengths."
+    )
+  }
+
+  if (
+    any(!is.finite(phylo_tree$edge.length)) ||
+    any(phylo_tree$edge.length < 0)
+  ) {
+    stop(
+      "`phylo_tree` contains invalid branch lengths."
+    )
   }
 
   if (
@@ -151,7 +233,9 @@ pnc_robustness <- function(trait_data,
     n_simulations < 1 ||
     n_simulations %% 1 != 0
   ) {
-    stop("`n_simulations` must be a positive integer.")
+    stop(
+      "`n_simulations` must be a positive integer."
+    )
   }
 
   if (
@@ -160,7 +244,9 @@ pnc_robustness <- function(trait_data,
     alpha_level <= 0 ||
     alpha_level >= 1
   ) {
-    stop("`alpha_level` must be between 0 and 1.")
+    stop(
+      "`alpha_level` must be between 0 and 1."
+    )
   }
 
   if (
@@ -168,27 +254,18 @@ pnc_robustness <- function(trait_data,
     !is.logical(verbose) ||
     is.na(verbose)
   ) {
-    stop("`verbose` must be TRUE or FALSE.")
+    stop(
+      "`verbose` must be TRUE or FALSE."
+    )
   }
 
-  n_simulations <- as.integer(n_simulations)
-
-
-  # ---------------------------------------------------------------------------
-  # 2. Calculate observed phylogenetic signal
-  # ---------------------------------------------------------------------------
-
-  observed_results <- pnc(
-    trait_data,
-    phylo_tree,
-    methods = "lambda",
-    pca_axes = NULL,
-    verbose = FALSE
+  n_simulations <- as.integer(
+    n_simulations
   )
 
 
   # ---------------------------------------------------------------------------
-  # 3. Define reference species pool
+  # 2. Define reference species pool
   # ---------------------------------------------------------------------------
 
   reference_species <- intersect(
@@ -211,17 +288,34 @@ pnc_robustness <- function(trait_data,
     )
   )
 
+  # Use phylogenetic tip order throughout the simulation.
   reference_species <- reference_tree$tip.label
+
+
+  # ---------------------------------------------------------------------------
+  # 3. Calculate observed phylogenetic signal
+  # ---------------------------------------------------------------------------
+
+  observed_results <- pnc(
+    trait_data = trait_data,
+    phylo_tree = phylo_tree,
+    methods = "lambda",
+    pca_axes = NULL,
+    verbose = FALSE
+  )
 
 
   # ---------------------------------------------------------------------------
   # 4. Helper functions
   # ---------------------------------------------------------------------------
 
-  # Standard Pagel's lambda estimator used only as a fallback.
-  estimate_lambda_standard <- function(tree, trait) {
+  # Standard Pagel's lambda estimator used as a fallback.
+  estimate_lambda_standard <- function(tree,
+                                       trait) {
 
-    trait <- trait[tree$tip.label]
+    trait <- trait[
+      tree$tip.label
+    ]
 
     result <- tryCatch(
       phytools::phylosig(
@@ -233,7 +327,11 @@ pnc_robustness <- function(trait_data,
       error = function(e) NULL
     )
 
-    if (is.null(result)) {
+    if (
+      is.null(result) ||
+      !is.finite(result$lambda) ||
+      !is.finite(result$P)
+    ) {
       return(
         list(
           lambda = NA_real_,
@@ -252,7 +350,9 @@ pnc_robustness <- function(trait_data,
   # Prepare phylogeny-specific quantities for repeated lambda estimation.
   prepare_lambda_fast <- function(tree) {
 
-    C <- ape::vcv.phylo(tree)
+    C <- ape::vcv.phylo(
+      tree
+    )
 
     d <- diag(C)
 
@@ -327,10 +427,14 @@ pnc_robustness <- function(trait_data,
           any(!is.finite(trait)) ||
           length(unique(trait)) < 2
         ) {
-          stop("Trait values are invalid.")
+          stop(
+            "Trait values are invalid."
+          )
         }
 
-        n <- length(trait)
+        n <- length(
+          trait
+        )
 
         v <- as.numeric(
           crossprod(
@@ -407,7 +511,9 @@ pnc_robustness <- function(trait_data,
           logdet_C_lambda <-
             logdet_D +
             sum(
-              log(lambda_eigenvalues)
+              log(
+                lambda_eigenvalues
+              )
             )
 
           log_likelihood <-
@@ -418,11 +524,13 @@ pnc_robustness <- function(trait_data,
                 logdet_C_lambda
             ) / 2
 
-          as.numeric(log_likelihood)
+          as.numeric(
+            log_likelihood
+          )
         }
 
 
-        # Same ten-interval optimization strategy as phylosig().
+        # Match the interval-search strategy used by phylosig().
         max_lambda <- prepared$max_lambda
 
         intervals <- cbind(
@@ -441,7 +549,6 @@ pnc_robustness <- function(trait_data,
         fits <- lapply(
           seq_len(niter),
           function(i) {
-
             stats::optimize(
               f = likelihood_lambda,
               interval = intervals[i, ],
@@ -452,12 +559,16 @@ pnc_robustness <- function(trait_data,
 
         likelihoods <- vapply(
           fits,
-          function(x) x$objective,
+          function(x) {
+            x$objective
+          },
           numeric(1)
         )
 
         best_fit <- fits[[
-          which.max(likelihoods)
+          which.max(
+            likelihoods
+          )
         ]]
 
         lambda_hat <-
@@ -483,6 +594,7 @@ pnc_robustness <- function(trait_data,
           p = p_value
         )
       },
+
       error = function(e) NULL
     )
 
@@ -511,30 +623,31 @@ pnc_robustness <- function(trait_data,
     if (!is.null(prepared)) {
 
       fast_result <- fit_lambda_fast(
-        prepared,
-        trait
+        prepared = prepared,
+        trait = trait
       )
 
       if (
         is.finite(fast_result$lambda) &&
         is.finite(fast_result$p)
       ) {
-        return(fast_result)
+        return(
+          fast_result
+        )
       }
     }
 
     estimate_lambda_standard(
-      tree,
-      trait
+      tree = tree,
+      trait = trait
     )
   }
 
 
   # Apply Pagel's lambda transformation.
-  #
-  # Warnings caused by deliberately probing an invalid lambda during the
-  # upper-bound search are suppressed. Other warnings remain visible.
-  rescale_lambda <- function(tree, lambda) {
+
+  rescale_lambda <- function(tree,
+                             lambda) {
 
     transformed_tree <- tryCatch(
 
@@ -567,6 +680,12 @@ pnc_robustness <- function(trait_data,
 
     if (
       is.null(transformed_tree) ||
+      !inherits(transformed_tree, "phylo")
+    ) {
+      return(NULL)
+    }
+
+    if (
       is.null(transformed_tree$edge.length) ||
       any(!is.finite(transformed_tree$edge.length)) ||
       any(transformed_tree$edge.length < 0)
@@ -577,7 +696,6 @@ pnc_robustness <- function(trait_data,
     transformed_tree
   }
 
-
   # Find the largest lambda supported by the reference phylogeny.
   find_valid_lambda <- function(tree,
                                 lambda_upper,
@@ -586,8 +704,8 @@ pnc_robustness <- function(trait_data,
     lambda_lower <- 1
 
     tree_lower <- rescale_lambda(
-      tree,
-      lambda_lower
+      tree = tree,
+      lambda = lambda_lower
     )
 
     if (is.null(tree_lower)) {
@@ -608,8 +726,8 @@ pnc_robustness <- function(trait_data,
         ) / 2
 
       tree_mid <- rescale_lambda(
-        tree,
-        lambda_mid
+        tree = tree,
+        lambda = lambda_mid
       )
 
       if (is.null(tree_mid)) {
@@ -630,6 +748,19 @@ pnc_robustness <- function(trait_data,
     list(
       lambda = lambda_lower,
       tree = tree_lower
+    )
+  }
+
+
+  # Standard empty sensitivity result.
+  empty_sensitivity <- function() {
+
+    data.frame(
+      simulation_lambda = NA_real_,
+      consistency = NA_character_,
+      signal_bias = NA_real_,
+      signal_sd = NA_real_,
+      n_successful = 0L
     )
   }
 
@@ -669,12 +800,23 @@ pnc_robustness <- function(trait_data,
 
   progress_step <- 0L
 
+  pb <- NULL
+
   if (verbose) {
 
     pb <- utils::txtProgressBar(
       min = 0,
       max = total_steps,
       style = 3
+    )
+
+    on.exit(
+      {
+        if (!is.null(pb)) {
+          close(pb)
+        }
+      },
+      add = TRUE
     )
   }
 
@@ -687,6 +829,7 @@ pnc_robustness <- function(trait_data,
     "list",
     nrow(observed_results)
   )
+
 
   for (i in seq_len(nrow(observed_results))) {
 
@@ -703,20 +846,14 @@ pnc_robustness <- function(trait_data,
 
     if (!is.finite(lambda_obs)) {
 
-      sensitivity_results[[i]] <- data.frame(
-        simulation_lambda = NA_real_,
-        consistency = NA_character_,
-        signal_bias = NA_real_,
-        signal_sd = NA_real_,
-        n_successful = 0L
-      )
+      sensitivity_results[[i]] <-
+        empty_sensitivity()
 
       progress_step <-
         progress_step +
         n_simulations
 
       if (verbose) {
-
         utils::setTxtProgressBar(
           pb,
           progress_step
@@ -728,7 +865,7 @@ pnc_robustness <- function(trait_data,
 
 
     # -------------------------------------------------------------------------
-    # Species with observed values for the focal trait
+    # Identify the empirical missing-data pattern
     # -------------------------------------------------------------------------
 
     trait_values <-
@@ -736,6 +873,7 @@ pnc_robustness <- function(trait_data,
 
     names(trait_values) <-
       rownames(trait_data)
+
 
     observed_species <- reference_species[
       !is.na(
@@ -745,22 +883,17 @@ pnc_robustness <- function(trait_data,
       )
     ]
 
+
     if (length(observed_species) < 4) {
 
-      sensitivity_results[[i]] <- data.frame(
-        simulation_lambda = NA_real_,
-        consistency = NA_character_,
-        signal_bias = NA_real_,
-        signal_sd = NA_real_,
-        n_successful = 0L
-      )
+      sensitivity_results[[i]] <-
+        empty_sensitivity()
 
       progress_step <-
         progress_step +
         n_simulations
 
       if (verbose) {
-
         utils::setTxtProgressBar(
           pb,
           progress_step
@@ -781,7 +914,7 @@ pnc_robustness <- function(trait_data,
 
 
     # -------------------------------------------------------------------------
-    # Prepare fast engine for the trait-specific observed tree
+    # Prepare fast engine for incomplete-data analysis
     # -------------------------------------------------------------------------
 
     prepared_observed <- tryCatch(
@@ -815,21 +948,21 @@ pnc_robustness <- function(trait_data,
       lambda_obs
 
     simulation_tree <- rescale_lambda(
-      reference_tree,
-      simulation_lambda
+      tree = reference_tree,
+      lambda = simulation_lambda
     )
 
 
-    # If the observed lambda is not valid for the larger reference tree,
-    # identify the largest lambda that can be applied to that tree.
+    # An observed lambda > 1 estimated from a smaller trait-specific tree may
+    # exceed the maximum supported by the larger reference phylogeny.
     if (
       is.null(simulation_tree) &&
       lambda_obs > 1
     ) {
 
       lambda_limit <- find_valid_lambda(
-        reference_tree,
-        lambda_obs
+        tree = reference_tree,
+        lambda_upper = lambda_obs
       )
 
       simulation_lambda <-
@@ -837,6 +970,7 @@ pnc_robustness <- function(trait_data,
 
       simulation_tree <-
         lambda_limit$tree
+
 
       if (
         verbose &&
@@ -867,18 +1001,13 @@ pnc_robustness <- function(trait_data,
 
 
     # -------------------------------------------------------------------------
-    # If transformation still fails, sensitivity cannot be evaluated
+    # Skip if a valid simulation tree cannot be constructed
     # -------------------------------------------------------------------------
 
     if (is.null(simulation_tree)) {
 
-      sensitivity_results[[i]] <- data.frame(
-        simulation_lambda = NA_real_,
-        consistency = NA_character_,
-        signal_bias = NA_real_,
-        signal_sd = NA_real_,
-        n_successful = 0L
-      )
+      sensitivity_results[[i]] <-
+        empty_sensitivity()
 
       progress_step <-
         progress_step +
@@ -934,6 +1063,7 @@ pnc_robustness <- function(trait_data,
         error = function(e) NULL
       )
 
+
       if (!is.null(simulated_trait)) {
 
         simulated_trait <- simulated_trait[
@@ -941,10 +1071,7 @@ pnc_robustness <- function(trait_data,
         ]
 
 
-        # ---------------------------------------------------------------------
         # Complete-data analysis
-        # ---------------------------------------------------------------------
-
         complete_result <- estimate_lambda(
           tree = reference_tree,
           prepared = prepared_reference,
@@ -952,19 +1079,13 @@ pnc_robustness <- function(trait_data,
         )
 
 
-        # ---------------------------------------------------------------------
-        # Apply observed missing-data pattern
-        # ---------------------------------------------------------------------
-
+        # Apply empirical missing-data pattern
         missing_trait <- simulated_trait[
           observed_tree$tip.label
         ]
 
 
-        # ---------------------------------------------------------------------
         # Incomplete-data analysis
-        # ---------------------------------------------------------------------
-
         missing_result <- estimate_lambda(
           tree = observed_tree,
           prepared = prepared_observed,
@@ -972,10 +1093,7 @@ pnc_robustness <- function(trait_data,
         )
 
 
-        # ---------------------------------------------------------------------
         # Keep only successful paired analyses
-        # ---------------------------------------------------------------------
-
         if (
           is.finite(complete_result$lambda) &&
           is.finite(complete_result$p) &&
@@ -987,6 +1105,7 @@ pnc_robustness <- function(trait_data,
             missing_result$lambda -
             complete_result$lambda
 
+
           complete_significant <-
             complete_result$p <
             alpha_level
@@ -995,6 +1114,7 @@ pnc_robustness <- function(trait_data,
             missing_result$p <
             alpha_level
 
+
           same_conclusion[sim_i] <-
             complete_significant ==
             missing_significant
@@ -1002,16 +1122,11 @@ pnc_robustness <- function(trait_data,
       }
 
 
-      # -----------------------------------------------------------------------
-      # Update progress bar
-      # -----------------------------------------------------------------------
-
       progress_step <-
         progress_step +
         1L
 
       if (verbose) {
-
         utils::setTxtProgressBar(
           pb,
           progress_step
@@ -1030,6 +1145,7 @@ pnc_robustness <- function(trait_data,
 
     n_successful <-
       sum(successful)
+
 
     if (n_successful == 0) {
 
@@ -1056,15 +1172,17 @@ pnc_robustness <- function(trait_data,
         " %"
       )
 
+
       signal_bias <- mean(
         lambda_difference[
           successful
         ]
       )
 
-      if (n_successful > 1) {
 
-        signal_sd <- stats::sd(
+      signal_sd <- if (n_successful > 1) {
+
+        stats::sd(
           lambda_difference[
             successful
           ]
@@ -1072,10 +1190,10 @@ pnc_robustness <- function(trait_data,
 
       } else {
 
-        signal_sd <-
-          NA_real_
+        NA_real_
       }
     }
+
 
     sensitivity_results[[i]] <- data.frame(
       simulation_lambda = simulation_lambda,
@@ -1091,8 +1209,9 @@ pnc_robustness <- function(trait_data,
   # 9. Close progress bar
   # ---------------------------------------------------------------------------
 
-  if (verbose) {
+  if (!is.null(pb)) {
     close(pb)
+    pb <- NULL
   }
 
 
@@ -1105,12 +1224,15 @@ pnc_robustness <- function(trait_data,
     sensitivity_results
   )
 
+
   results <- cbind(
     observed_results,
     sensitivity_results
   )
 
+
   rownames(results) <- NULL
+
 
   attr(
     results,
@@ -1121,6 +1243,7 @@ pnc_robustness <- function(trait_data,
     results,
     "alpha_level"
   ) <- alpha_level
+
 
   results
 }

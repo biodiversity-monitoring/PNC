@@ -2,74 +2,102 @@
 % Please edit documentation in R/merge_dataset.R
 \name{merge_dataset}
 \alias{merge_dataset}
-\title{Merge Two Datasets Based on Species Column}
+\title{Merge Two Trait Datasets by Species}
 \usage{
 merge_dataset(main_data, additional_data, priority = "main")
 }
 \arguments{
-\item{main_data}{A data frame containing the primary dataset. Must include a 'species' column.}
+\item{main_data}{A data frame containing the primary dataset. It must include
+a column named `"species"`.}
 
-\item{additional_data}{A data frame containing the secondary dataset. Must include a 'species' column.}
+\item{additional_data}{A data frame containing the additional dataset. It
+must include a column named `"species"`.}
 
-\item{priority}{A character string specifying how to handle conflicts when both datasets
-contain non-missing values for the same species and column. Options are:
+\item{priority}{Character string specifying how conflicts are resolved when
+both datasets contain non-missing values for the same species and variable.
+Available options are:
 \itemize{
-  \item \code{"main"} (default): Use values from main_data
-  \item \code{"additional"}: Use values from additional_data
-  \item \code{"mean"}: Calculate mean for numeric values, use main_data for non-numeric
+  \item `"main"`: retain the value from `main_data` (default).
+  \item `"additional"`: retain the value from `additional_data`.
+  \item `"mean"`: use the arithmetic mean when the corresponding columns
+    in both datasets are numeric; otherwise retain the value from
+    `main_data`.
 }}
 }
 \value{
-A data frame containing all unique species from both input datasets, with
-  all columns from both datasets. The 'species' column is placed first, followed
-  by all other columns in alphabetical order.
+A data frame containing all unique species and all variables present
+  in either input dataset. The `species` column is placed first. Other
+  columns retain their order from `main_data`, followed by columns occurring
+  only in `additional_data`.
 }
 \description{
-This function merges two data frames based on the 'species' column, handling
-missing values and column differences intelligently. It provides flexible
-options for resolving conflicts when the same species appears in both datasets.
+`merge_dataset()` combines two trait datasets using the `species` column as
+the matching key. Species and variables occurring in either dataset are
+retained, and missing or conflicting values are resolved according to the
+selected priority rule.
 }
 \details{
-The function performs the following operations:
-\itemize{
-  \item Combines all unique species from both datasets
-  \item Includes all columns from both datasets
-  \item Handles missing values by using available non-missing values
-  \item Resolves conflicts based on the specified priority
-  \item For duplicate species within a dataset, only the first occurrence is used
-}
-}
-\note{
-\itemize{
-  \item Both input datasets must contain a 'species' column
-  \item If a species appears multiple times in a dataset, only the first occurrence is used
-  \item When priority is "mean", non-numeric values default to main_data values
-  \item The function preserves the original data types of columns
-}
+For a given species and variable, a non-missing value is always retained when
+the corresponding value in the other dataset is missing. The `priority`
+argument is used only when both datasets contain non-missing values.
+
+If a species occurs more than once within an input dataset, only its first
+occurrence is used.
+
+With `priority = "mean"`, averaging is performed only when the corresponding
+columns in both datasets are numeric.
 }
 \examples{
-# Create sample datasets
 main_data <- data.frame(
-  species = c("Abies alba", "Coussapoa trinervia", "Crataegus monogyna"),
-  genus = c("Abies", "Coussapoa", "Crataegus"),
-  family = c("Pinaceae", "Urticaceae", "Rosaceae"),
+  species = c(
+    "Abies alba",
+    "Coussapoa trinervia",
+    "Crataegus monogyna"
+  ),
+  genus = c(
+    "Abies",
+    "Coussapoa",
+    "Crataegus"
+  ),
+  family = c(
+    "Pinaceae",
+    "Urticaceae",
+    "Rosaceae"
+  ),
   LA = c(NA, 2050.24, 449.15),
   LeafN = c(13.10, 14.52, 17.46),
-  Seedmass = c(53.64, NA, 95.92),
+  SeedMass = c(53.64, NA, 95.92),
   stringsAsFactors = FALSE
 )
 
 additional_data <- data.frame(
-  species = c("Abies alba", "Corydalis solida"),
-  genus = c("Abies", "Corydalis"),
-  family = c("Pinaceae", "Papaveraceae"),
+  species = c(
+    "Abies alba",
+    "Corydalis solida"
+  ),
+  genus = c(
+    "Abies",
+    "Corydalis"
+  ),
+  family = c(
+    "Pinaceae",
+    "Papaveraceae"
+  ),
   LA = c(25.58, NA),
-  LMA = c(0.19, 0.2),
+  LMA = c(0.19, 0.20),
   PlantHeight = c(53.66, 0.14),
   stringsAsFactors = FALSE
 )
 
-# Merge with main data priority (default)
-merge_dataset(main_data, additional_data)
+merge_dataset(
+  main_data,
+  additional_data
+)
+
+merge_dataset(
+  main_data,
+  additional_data,
+  priority = "mean"
+)
 
 }

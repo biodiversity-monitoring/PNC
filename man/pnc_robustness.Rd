@@ -17,7 +17,8 @@ pnc_robustness(
 with species as rows and traits as columns. Species names must be stored
 as row names.}
 
-\item{phylo_tree}{A phylogenetic tree object of class `"phylo"`.}
+\item{phylo_tree}{A phylogenetic tree object of class `"phylo"` with branch
+lengths.}
 
 \item{n_simulations}{Number of paired simulations performed for each trait.
 Default is 100.}
@@ -36,9 +37,8 @@ A data frame containing the observed phylogenetic signal results
     \item `simulation_lambda`: lambda value used to generate simulated trait
       data. This equals the observed lambda unless the latter exceeds the
       maximum supported by the reference phylogeny.
-    \item `consistency`: percentage of successful simulations in which
-      complete and incomplete data produced the same significance
-      conclusion.
+    \item `consistency`: percentage of successful paired simulations in which
+      complete and incomplete data produced the same significance conclusion.
     \item `signal_bias`: mean paired difference between lambda estimated
       from incomplete and complete simulated data
       (`lambda_missing - lambda_complete`).
@@ -55,44 +55,43 @@ affects inference of phylogenetic signal based on Pagel's lambda.
 For each trait, the observed lambda is first estimated using `pnc()`.
 Complete trait data are then simulated under Brownian motion on a reference
 phylogeny transformed according to the observed lambda. Each simulated trait
-is analyzed twice: first using all species in the reference species pool, and
-then after applying the observed missing-data pattern of the focal trait.
+is analyzed twice: first using all species in the reference species pool,
+and then after applying the observed missing-data pattern of the focal trait.
 
-If the observed lambda exceeds the maximum value supported by the reference
-phylogeny, the largest valid lambda for that reference phylogeny is used for
-simulation. The observed lambda estimate itself is not modified.
-
-The paired difference between the two analyses quantifies the effect of
-trait-data incompleteness on phylogenetic signal estimation.
+The paired comparison isolates the effect of trait-data incompleteness on
+phylogenetic signal estimation.
 
 
-The analysis is performed separately for each original trait.
+The analysis is performed separately for each original trait. The reference
+species pool consists of species represented in both `trait_data` and
+`phylo_tree`. Species without observed values for the focal trait are retained
+in the complete simulated data and removed only when the empirical
+missing-data pattern is applied.
 
-The simulation is conditional on the lambda estimated from the observed
-data. The reference phylogeny is transformed according to this lambda, and
-trait values are simulated under Brownian motion on the transformed tree.
+For each trait, simulation is conditional on the Pagel's lambda estimated
+from the observed data. The reference phylogeny is transformed according to
+this lambda, and trait values are simulated under Brownian motion on the
+transformed tree.
 
 The maximum valid lambda depends on the branch-length structure of the
-reference phylogeny. Consequently, an observed lambda estimated from a
-trait-specific pruned tree may occasionally exceed the maximum value that
-can be applied to the larger reference phylogeny. In this case,
-`pnc_robustness()` identifies the largest valid lambda numerically and uses
-that value only for simulation. A warning is issued when this adjustment
-occurs.
+reference phylogeny. An observed lambda estimated from a trait-specific
+pruned tree may occasionally exceed the maximum value that can be applied
+to the larger reference phylogeny. In this case, the largest valid lambda
+for the reference phylogeny is used only for simulation. The observed lambda
+estimate itself is not modified.
 
 Each simulated trait is analyzed before and after applying the observed
-missing-data pattern. Because the same simulated trait is used in both
-analyses, differences between them reflect the effect of trait-data
-incompleteness.
+missing-data pattern. Because both analyses use the same simulated trait,
+their paired difference reflects the effect of trait-data incompleteness
+rather than stochastic differences among simulations.
 
 Simulated lambda estimates are not forced to equal the observed lambda.
 Their natural stochastic variation is retained.
 
 Repeated Pagel's lambda estimation is accelerated by caching the
 phylogeny-specific covariance structure and using an algebraically
-equivalent spectral representation of the likelihood. This changes the
-numerical implementation but not the Pagel's lambda likelihood,
-likelihood-ratio test, or P value.
+equivalent spectral representation of the likelihood. If the fast
+calculation fails, `phytools::phylosig()` is used as a fallback.
 
 PCA axes are not included because evaluating their missing-data sensitivity
 would require multivariate trait simulation that preserves covariance among
@@ -121,7 +120,7 @@ set.seed(123)
 pnc_robustness(
   subtraits,
   BCI$phy_species,
-  n_simulations = 100
+  n_simulations = 10
 )
 }
 

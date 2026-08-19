@@ -32,14 +32,16 @@ to calculate. Available options are `"lambda"` and `"K"`.}
 \item{pca_axes}{Character vector specifying PCA axes to include, for example
 `c("PC1", "PC2")`. Set to `NULL` to skip PCA.}
 
-\item{sig_levels}{Numeric vector of three significance thresholds used to
-assign significance symbols.}
+\item{sig_levels}{Numeric vector of three increasing significance thresholds
+used to assign significance symbols. Default is
+`c(0.001, 0.01, 0.05)`.}
 
 \item{min_abundance}{Minimum abundance required for a species to be
-considered present in a community.}
+considered present in a community. A species is considered present when
+its abundance is greater than `min_abundance`. Default is 0.}
 
 \item{nsim}{Number of randomizations used for significance testing of
-Blomberg's K.}
+Blomberg's K. Default is 1000.}
 
 \item{verbose}{Logical. If `TRUE`, warnings from PCA or phylogenetic signal
 estimation are reported.}
@@ -50,8 +52,8 @@ A data frame with one row for each
   \itemize{
     \item `plot`: community name.
     \item `trait`: trait name or PCA axis.
-    \item `coverage`: percentage of species in the community with available
-      trait values.
+    \item `coverage`: percentage of species present in the community with
+      available values for the analyzed trait or PCA axis.
     \item `n_sp`: number of species actually included in the phylogenetic
       signal analysis after matching trait data with the phylogeny.
     \item `signal`: estimated phylogenetic signal.
@@ -79,6 +81,21 @@ Phylogenetic signal describes the tendency for related species to resemble
 one another in trait values. It can provide evidence relevant to
 phylogenetic niche conservatism, but does not by itself constitute a
 direct test of phylogenetic niche conservatism.
+
+
+Original traits are analyzed independently, so missing data in one trait
+do not affect the species included for another trait.
+
+When PCA axes are requested, the PCA is based on species that occur in at
+least one community, are represented in the phylogeny, are present in
+`trait_data`, and have complete data across all supplied traits. The same
+PCA model is then used for every community.
+
+Phylogenetic signal is not estimated for a community-trait combination when
+fewer than four species have both trait values and phylogenetic information.
+This threshold is used as a practical computational safeguard rather than
+as a universal minimum sample-size requirement for phylogenetic signal
+estimation.
 }
 \examples{
 \donttest{
@@ -93,6 +110,7 @@ subtraits <- extract_traits(
   rank = "species"
 )
 
+# Pagel's lambda with a common PCA space
 compnc(
   HimalayanBirds$com,
   subtraits,
@@ -100,6 +118,7 @@ compnc(
   methods = "lambda"
 )
 
+# Pagel's lambda without PCA
 compnc(
   HimalayanBirds$com,
   subtraits,

@@ -19,10 +19,11 @@
 #'   to calculate. Available options are `"lambda"` and `"K"`.
 #' @param pca_axes Character vector specifying PCA axes to include, for example
 #'   `c("PC1", "PC2")`. Set to `NULL` to skip PCA.
-#' @param sig_levels Numeric vector of three significance thresholds used to
-#'   assign significance symbols.
+#' @param sig_levels Numeric vector of three increasing significance thresholds
+#'   used to assign significance symbols. Default is
+#'   `c(0.001, 0.01, 0.05)`.
 #' @param nsim Number of randomizations used for significance testing of
-#'   Blomberg's K.
+#'   Blomberg's K. Default is 1000.
 #' @param verbose Logical. If `TRUE`, warnings from PCA or phylogenetic signal
 #'   estimation are reported.
 #'
@@ -38,6 +39,17 @@
 #'     \item `method`: phylogenetic signal metric.
 #'   }
 #'
+#' @details
+#' When PCA axes are requested, PCA is performed only on species represented
+#' in both `trait_data` and `phylo_tree` and having complete data across all
+#' supplied traits. The resulting PCA scores are then analyzed in the same way
+#' as individual traits.
+#'
+#' Phylogenetic signal is not estimated when fewer than four species have both
+#' trait data and phylogenetic information. This threshold is used as a
+#' practical computational safeguard rather than as a universal minimum
+#' sample-size requirement for phylogenetic signal estimation.
+#'
 #' @examples
 #' \donttest{
 #' data(BCI)
@@ -49,7 +61,14 @@
 #'   sp,
 #'   TRY,
 #'   rank = "species",
-#'   traits = c("LA", "LMA", "LeafN", "PlantHeight", "SeedMass", "SSD")
+#'   traits = c(
+#'     "LA",
+#'     "LMA",
+#'     "LeafN",
+#'     "PlantHeight",
+#'     "SeedMass",
+#'     "SSD"
+#'   )
 #' )
 #'
 #' # Pagel's lambda with PCA
@@ -91,10 +110,21 @@ pnc <- function(trait_data,
     stop("`trait_data` must be a data frame or matrix.")
   }
 
-  trait_data <- as.data.frame(trait_data, check.names = FALSE)
+  if (!inherits(phylo_tree, "phylo")) {
+    stop("`phylo_tree` must be an object of class `phylo`.")
+  }
+
+  trait_data <- as.data.frame(
+    trait_data,
+    check.names = FALSE
+  )
 
   if (nrow(trait_data) == 0 || ncol(trait_data) == 0) {
     stop("`trait_data` must contain at least one species and one trait.")
+  }
+
+  if (is.null(rownames(trait_data))) {
+    stop("`trait_data` must have species names as row names.")
   }
 
   if (anyDuplicated(rownames(trait_data))) {
@@ -105,21 +135,53 @@ pnc <- function(trait_data,
     stop("Tip labels in `phylo_tree` must be unique.")
   }
 
-  if (!inherits(phylo_tree, "phylo")) {
-    stop("`phylo_tree` must be an object of class `phylo`.")
-  }
-
-  numeric_traits <- vapply(trait_data, is.numeric, logical(1))
+  numeric_traits <- vapply(
+    trait_data,
+    is.numeric,
+    logical(1)
+  )
 
   if (!all(numeric_traits)) {
     stop(
       "All trait columns must be numeric. Non-numeric traits: ",
-      paste(names(numeric_traits)[!numeric_traits], collapse = ", ")
+      paste(
+        names(numeric_traits)[!numeric_traits],
+        collapse = ", "
+      )
     )
   }
 
-  if (length(intersect(rownames(trait_data), phylo_tree$tip.label)) == 0) {
-    stop("No species are shared between `trait_data` and `phylo_tree`.")
+  non_finite_traits <- vapply(
+    trait_data,
+    function(x) {
+      any(
+        !is.na(x) &
+          !is.finite(x)
+      )
+    },
+    logical(1)
+  )
+
+  if (any(non_finite_traits)) {
+    stop(
+      "Trait data contain non-finite values in: ",
+      paste(
+        names(non_finite_traits)[non_finite_traits],
+        collapse = ", "
+      ),
+      "."
+    )
+  }
+
+  reference_species <- intersect(
+    rownames(trait_data),
+    phylo_tree$tip.label
+  )
+
+  if (length(reference_species) == 0) {
+    stop(
+      "No species are shared between `trait_data` and `phylo_tree`."
+    )
   }
 
   methods <- match.arg(
@@ -128,26 +190,72 @@ pnc <- function(trait_data,
     several.ok = TRUE
   )
 
-  if (!is.null(pca_axes) && !is.character(pca_axes)) {
-    stop("`pca_axes` must be a character vector or `NULL`.")
+  if (
+    !is.null(pca_axes) &&
+    !is.character(pca_axes)
+  ) {
+    stop(
+      "`pca_axes` must be a character vector or `NULL`."
+    )
   }
 
-  pca_axes <- unique(pca_axes)
+  if (!is.null(pca_axes)) {
+
+    if (
+      anyNA(pca_axes) ||
+      any(!nzchar(pca_axes))
+    ) {
+      stop(
+        "`pca_axes` must contain non-missing, non-empty names."
+      )
+    }
+
+    pca_axes <- unique(pca_axes)
+
+    duplicated_names <- intersect(
+      pca_axes,
+      colnames(trait_data)
+    )
+
+    if (length(duplicated_names) > 0) {
+      stop(
+        "Requested PCA axis names already exist in `trait_data`: ",
+        paste(
+          duplicated_names,
+          collapse = ", "
+        ),
+        "."
+      )
+    }
+  }
 
   if (
     length(sig_levels) != 3 ||
     any(!is.finite(sig_levels)) ||
+    any(sig_levels <= 0) ||
+    any(sig_levels >= 1) ||
     any(diff(sig_levels) <= 0)
   ) {
-    stop("`sig_levels` must contain three increasing significance thresholds.")
+    stop(
+      "`sig_levels` must contain three increasing values between 0 and 1."
+    )
   }
 
   if (
     length(nsim) != 1 ||
     !is.finite(nsim) ||
-    nsim < 1
+    nsim < 1 ||
+    nsim %% 1 != 0
   ) {
     stop("`nsim` must be a positive integer.")
+  }
+
+  if (
+    length(verbose) != 1 ||
+    !is.logical(verbose) ||
+    is.na(verbose)
+  ) {
+    stop("`verbose` must be TRUE or FALSE.")
   }
 
   nsim <- as.integer(nsim)
@@ -158,14 +266,30 @@ pnc <- function(trait_data,
   # ---------------------------------------------------------------------------
 
   analysis_data <- trait_data
+
   pca_model <- NULL
   pca_results <- NULL
   pca_failed <- FALSE
 
   if (length(pca_axes) > 0) {
 
-    complete_rows <- stats::complete.cases(trait_data)
-    complete_data <- trait_data[complete_rows, , drop = FALSE]
+    # PCA is based only on species represented in both
+    # the trait data and the phylogeny.
+    pca_data <- trait_data[
+      reference_species,
+      ,
+      drop = FALSE
+    ]
+
+    complete_rows <- stats::complete.cases(
+      pca_data
+    )
+
+    complete_data <- pca_data[
+      complete_rows,
+      ,
+      drop = FALSE
+    ]
 
     if (nrow(complete_data) < 4) {
 
@@ -174,18 +298,20 @@ pnc <- function(trait_data,
       if (verbose) {
         warning(
           "PCA was skipped because fewer than four species ",
-          "had complete trait data."
+          "shared by `trait_data` and `phylo_tree` had complete trait data."
         )
       }
 
     } else {
 
       pca_model <- tryCatch(
+
         stats::prcomp(
           complete_data,
           center = TRUE,
           scale. = TRUE
         ),
+
         error = function(e) {
 
           if (verbose) {
@@ -221,10 +347,16 @@ pnc <- function(trait_data,
         available_axes
       )
 
-      if (length(unavailable_axes) > 0 && verbose) {
+      if (
+        length(unavailable_axes) > 0 &&
+        verbose
+      ) {
         warning(
           "Requested PCA axes were not available: ",
-          paste(unavailable_axes, collapse = ", ")
+          paste(
+            unavailable_axes,
+            collapse = ", "
+          )
         )
       }
 
@@ -260,23 +392,33 @@ pnc <- function(trait_data,
       return("")
     }
 
-    if (p <= sig_levels[1]) {
+    if (p < sig_levels[1]) {
+
       "***"
-    } else if (p <= sig_levels[2]) {
+
+    } else if (p < sig_levels[2]) {
+
       "**"
-    } else if (p <= sig_levels[3]) {
+
+    } else if (p < sig_levels[3]) {
+
       "*"
+
     } else {
+
       "ns"
     }
   }
 
 
-  calculate_signal <- function(tree, trait, method) {
+  calculate_signal <- function(tree,
+                               trait,
+                               method) {
 
     result <- tryCatch(
 
       {
+
         if (method == "lambda") {
 
           phytools::phylosig(
@@ -329,8 +471,8 @@ pnc <- function(trait_data,
     }
 
     list(
-      signal = signal,
-      p = result$P
+      signal = as.numeric(signal),
+      p = as.numeric(result$P)
     )
   }
 
@@ -339,11 +481,14 @@ pnc <- function(trait_data,
   # 4. Calculate phylogenetic signal
   # ---------------------------------------------------------------------------
 
-  trait_names <- colnames(analysis_data)
+  trait_names <- colnames(
+    analysis_data
+  )
 
   result_list <- vector(
     "list",
-    length(trait_names) * length(methods)
+    length(trait_names) *
+      length(methods)
   )
 
   result_i <- 0L
@@ -354,16 +499,25 @@ pnc <- function(trait_data,
 
     coverage <- paste0(
       round(
-        mean(!is.na(trait_values)) * 100,
+        mean(
+          !is.na(trait_values)
+        ) * 100,
         2
       ),
       " %"
     )
 
-    valid <- !is.na(trait_values)
+    valid <- !is.na(
+      trait_values
+    )
 
-    trait_vector <- trait_values[valid]
-    species <- rownames(analysis_data)[valid]
+    trait_vector <- trait_values[
+      valid
+    ]
+
+    species <- rownames(
+      analysis_data
+    )[valid]
 
     names(trait_vector) <- species
 
@@ -372,10 +526,23 @@ pnc <- function(trait_data,
       phylo_tree$tip.label
     )
 
-    # Actual analytical sample size
-    n_sp <- length(common_species)
+    # Number of species actually entering
+    # the phylogenetic signal analysis.
+    n_sp <- length(
+      common_species
+    )
 
     can_analyze <- n_sp >= 4
+
+    if (!can_analyze && verbose) {
+
+      warning(
+        "Trait `",
+        trait_name,
+        "` was not analyzed because fewer than four species ",
+        "had both trait data and phylogenetic information."
+      )
+    }
 
     if (can_analyze) {
 
@@ -391,7 +558,13 @@ pnc <- function(trait_data,
         pruned_tree$tip.label
       ]
 
-      if (length(unique(trait_for_analysis)) < 2) {
+      if (
+        length(
+          unique(
+            trait_for_analysis
+          )
+        ) < 2
+      ) {
 
         can_analyze <- FALSE
 
@@ -412,9 +585,9 @@ pnc <- function(trait_data,
       if (can_analyze) {
 
         signal_result <- calculate_signal(
-          pruned_tree,
-          trait_for_analysis,
-          method
+          tree = pruned_tree,
+          trait = trait_for_analysis,
+          method = method
         )
 
       } else {
@@ -431,7 +604,9 @@ pnc <- function(trait_data,
         n_sp = n_sp,
         signal = signal_result$signal,
         p = signal_result$p,
-        significance = get_significance(signal_result$p),
+        significance = get_significance(
+          signal_result$p
+        ),
         method = method,
         stringsAsFactors = FALSE
       )
@@ -450,18 +625,43 @@ pnc <- function(trait_data,
 
   rownames(results) <- NULL
 
-  attr(results, "methods") <- methods
-  attr(results, "pca_axes") <- pca_axes
-  attr(results, "pca_failed") <- pca_failed
-  attr(results, "sig_levels") <- sig_levels
-  attr(results, "nsim") <- nsim
+  attr(
+    results,
+    "methods"
+  ) <- methods
+
+  attr(
+    results,
+    "pca_axes"
+  ) <- pca_axes
+
+  attr(
+    results,
+    "pca_failed"
+  ) <- pca_failed
+
+  attr(
+    results,
+    "sig_levels"
+  ) <- sig_levels
+
+  attr(
+    results,
+    "nsim"
+  ) <- nsim
 
   if (!is.null(pca_results)) {
-    attr(results, "pca_results") <- pca_results
+    attr(
+      results,
+      "pca_results"
+    ) <- pca_results
   }
 
   if (!is.null(pca_model)) {
-    attr(results, "pca_model") <- pca_model
+    attr(
+      results,
+      "pca_model"
+    ) <- pca_model
   }
 
   results

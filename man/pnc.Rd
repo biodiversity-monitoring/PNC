@@ -27,11 +27,12 @@ to calculate. Available options are `"lambda"` and `"K"`.}
 \item{pca_axes}{Character vector specifying PCA axes to include, for example
 `c("PC1", "PC2")`. Set to `NULL` to skip PCA.}
 
-\item{sig_levels}{Numeric vector of three significance thresholds used to
-assign significance symbols.}
+\item{sig_levels}{Numeric vector of three increasing significance thresholds
+used to assign significance symbols. Default is
+`c(0.001, 0.01, 0.05)`.}
 
 \item{nsim}{Number of randomizations used for significance testing of
-Blomberg's K.}
+Blomberg's K. Default is 1000.}
 
 \item{verbose}{Logical. If `TRUE`, warnings from PCA or phylogenetic signal
 estimation are reported.}
@@ -61,6 +62,17 @@ Phylogenetic signal describes the tendency for related species to resemble
 one another in trait values. It can provide evidence relevant to
 phylogenetic niche conservatism, but does not by itself constitute a
 direct test of phylogenetic niche conservatism.
+
+
+When PCA axes are requested, PCA is performed only on species represented
+in both `trait_data` and `phylo_tree` and having complete data across all
+supplied traits. The resulting PCA scores are then analyzed in the same way
+as individual traits.
+
+Phylogenetic signal is not estimated when fewer than four species have both
+trait data and phylogenetic information. This threshold is used as a
+practical computational safeguard rather than as a universal minimum
+sample-size requirement for phylogenetic signal estimation.
 }
 \examples{
 \donttest{
@@ -73,7 +85,14 @@ subtraits <- extract_traits(
   sp,
   TRY,
   rank = "species",
-  traits = c("LA", "LMA", "LeafN", "PlantHeight", "SeedMass", "SSD")
+  traits = c(
+    "LA",
+    "LMA",
+    "LeafN",
+    "PlantHeight",
+    "SeedMass",
+    "SSD"
+  )
 )
 
 # Pagel's lambda with PCA
