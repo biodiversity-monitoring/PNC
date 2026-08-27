@@ -1,0 +1,104 @@
+#' Reptile Traits and Environmental Attributes
+#'
+#' @description
+#' A processed subset of the ReptTraits database containing 12 quantitative
+#' traits and environmental attributes for 12,060 extant reptile species.
+#' The dataset contains one record per species.
+#'
+#' @format A data frame with 12,060 rows and 15 variables:
+#' \describe{
+#'   \item{species}{
+#'     Character. Full binomial species name.
+#'   }
+#'   \item{genus}{
+#'     Character. Genus name.
+#'   }
+#'   \item{family}{
+#'     Character. Taxonomic family.
+#'   }
+#'   \item{Minimal_elevation}{
+#'     Numeric. Minimum elevation at which the species was observed,
+#'     metres above sea level.
+#'   }
+#'   \item{Maximum_elevation}{
+#'     Numeric. Maximum elevation at which the species was observed,
+#'     metres above sea level.
+#'   }
+#'   \item{Mean_Annual_Temperature}{
+#'     Numeric. Mean annual temperature, degrees Celsius.
+#'   }
+#'   \item{Temperature_Seasonality}{
+#'     Numeric. Temperature seasonality, expressed as the standard
+#'     deviation multiplied by 100.
+#'   }
+#'   \item{Seasonality_Precipitation}{
+#'     Numeric. Precipitation seasonality, expressed as the coefficient
+#'     of variation multiplied by 100.
+#'   }
+#'   \item{Maximum_Longevity}{
+#'     Numeric. Maximum age reported for the species in the literature,
+#'     years.
+#'   }
+#'   \item{Maximum_body_mass}{
+#'     Numeric. Maximum body mass, g.
+#'   }
+#'   \item{Maximum_length}{
+#'     Numeric. Maximum snout-vent length, or straight carapace length
+#'     for turtles, mm.
+#'   }
+#'   \item{Mean_number_of_offspring}{
+#'     Numeric. Mean number of offspring per litter or eggs per clutch.
+#'   }
+#'   \item{Smallest_clutch_size}{
+#'     Numeric. Lowest reported mean clutch or litter size.
+#'   }
+#'   \item{Largest_clutch_size}{
+#'     Numeric. Highest reported mean clutch or litter size.
+#'   }
+#'   \item{Mean_Tb}{
+#'     Numeric. Mean of the reported mean body temperatures,
+#'     degrees Celsius.
+#'   }
+#' }
+#'
+#' @details
+#' The source ReptTraits database contains 40 variables describing reptile
+#' taxonomy, ecology, morphology, life history, physiology, behaviour, and
+#' conservation status. This processed dataset retains five elevational or
+#' climatic attributes and seven morphological, life-history, or physiological
+#' variables for use with PNC.
+#'
+#' Species names and higher taxonomy follow the Reptile Database taxonomy
+#' adopted by ReptTraits. Trait values and units were retained as provided in
+#' the source database. No additional unit conversions, transformations, or
+#' imputations were applied when preparing this PNC subset. Missing values are
+#' represented by \code{NA}, and coverage varies among variables.
+#'
+#' The \code{Maximum_length} variable represents snout-vent length for most
+#' reptile groups but straight carapace length for turtles. The three clutch
+#' or litter-size variables provide related summaries of the same reproductive
+#' dimension and should not be treated as independent traits in multivariate
+#' analyses.
+#'
+#' @source
+#' ReptTraits data repository:
+#' \url{https://doi.org/10.6084/m9.figshare.24572683}
+#'
+#' @references
+#' Oskyrko, O., Mi, C., Meiri, S., and Du, W. (2024).
+#' ReptTraits: a comprehensive dataset of ecological traits in reptiles.
+#' \emph{Scientific Data}, 11, 243.
+#' \doi{10.1038/s41597-024-03079-5}
+#'
+#' @examples
+#' data(ReptTraits)
+#'
+#' dim(ReptTraits)
+#' head(
+#'   ReptTraits[
+#'     ,
+#'     c("species", "Maximum_body_mass", "Mean_Tb")
+#'   ]
+#' )
+#'
+"ReptTraits"
