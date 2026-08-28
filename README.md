@@ -1,6 +1,6 @@
 # PNC <img src="man/figures/LOGO.jpg" alt="PNC logo" align="right" width="120"/>
 
-**PNC** is an R package for evaluating phylogenetic signal in niche-related quantitative traits within a focal species pool or across multiple ecological communities. It combines trait preparation, coverage assessment, optional principal component analysis (PCA), estimation of Pagel's lambda and Blomberg's K, and simulation based assessment of how observed missing trait data affect inference.
+**PNC** is an R package for evaluating phylogenetic signal in quantitative traits within a focal species pool or across multiple ecological communities.It combines trait preparation, coverage assessment, optional principal component analysis (PCA), estimation of Pagel's lambda and Blomberg's K, and simulation based assessment of how observed missing trait data affect inference.
 
 Phylogenetic signal is the statistical tendency for related taxa to resemble one another in measured traits. When phylogeny is used as a proxy for ecological similarity, evaluating signal in the relevant traits provides an empirical check on that assumption. Interpretation should remain tied to the measured trait dimensions, focal taxa, and species pool.
 
@@ -55,7 +55,7 @@ PNC includes processed quantitative trait datasets representing six major taxono
 | `COMBINE`    | Mammals         | Morphology, life history, diet, habitat, and geographical traits          | [Soria et al. (2021)](https://doi.org/10.1002/ecy.3344)             |
 | `ReptTraits` | Reptiles        | Morphological, environmental, thermal, longevity, and reproductive traits | [Oskyrko et al. (2024)](https://doi.org/10.1038/s41597-024-03079-5) |
 | `AmphiBIO`   | Amphibians      | Body size, life history, and reproductive traits                          | [Oliveira et al. (2017)](https://doi.org/10.1038/sdata.2017.123)    |
-| `Fishlife`   | Fishes          | Morphological, ecological, and life history traits                        | [Thorson et al. (2023)](https://doi.org/10.1111/2041-210X.14076)    |
+| `FishLife`   | Fishes          | Morphological, ecological, and life history traits                        | [Thorson et al. (2023)](https://doi.org/10.1111/2041-210X.14076)    |
 
 Two datasets support the examples below:
 

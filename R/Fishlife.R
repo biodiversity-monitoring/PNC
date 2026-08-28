@@ -138,13 +138,13 @@
 #' \doi{10.1111/2041-210X.14076}
 #'
 #' @examples
-#' data(Fishlife)
+#' data(FishLife)
 #'
-#' dim(Fishlife)
+#' dim(FishLife)
 #' head(Fishlife[, c(
 #'   "species",
 #'   "length_max",
 #'   "offspring_size"
 #' )])
 #'
-"Fishlife"
+"FishLife"
