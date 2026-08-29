@@ -1,4 +1,4 @@
-# PNC 0.2.0 (2026-08-28)
+# PNC 0.2.0 (2026-08-29)
 
 * Redesigned `pnc()` and `compnc()` for a simpler and more consistent analysis workflow.
 * Standardized outputs and updated `n_sp` to reflect the actual number of species used in each analysis.

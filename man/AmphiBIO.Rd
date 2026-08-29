@@ -56,7 +56,7 @@ A data frame with 6,776 rows and 15 variables:
 }
 \source{
 AmphiBIO data repository:
-\url{https://doi.org/10.6084/m9.figshare.4644424}
+\doi{10.6084/m9.figshare.4644424}
 }
 \usage{
 AmphiBIO

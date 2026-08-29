@@ -154,7 +154,7 @@ A data frame with 6,234 rows and 43 variables:
 }
 \source{
 COMBINE data repository:
-\url{https://doi.org/10.6084/m9.figshare.13028255.v4}
+\doi{10.6084/m9.figshare.13028255.v4}
 }
 \usage{
 COMBINE

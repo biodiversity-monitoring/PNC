@@ -159,7 +159,7 @@
 #'
 #' @source
 #' COMBINE data repository:
-#' \url{https://doi.org/10.6084/m9.figshare.13028255.v4}
+#' \doi{10.6084/m9.figshare.13028255.v4}
 #'
 #' @references
 #' Soria, C. D., Pacifici, M., Di Marco, M., Stephen, S. M., and

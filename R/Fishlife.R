@@ -125,7 +125,7 @@
 #'
 #' @source
 #' FishLife version 3.0.1:
-#' \url{https://doi.org/10.5281/zenodo.7590994}
+#' \doi{10.5281/zenodo.7590994}
 #'
 #' @references
 #' Thorson, J. T., Maureaud, A. A., Frelat, R., Merigot, B.,
@@ -141,7 +141,7 @@
 #' data(FishLife)
 #'
 #' dim(FishLife)
-#' head(Fishlife[, c(
+#' head(FishLife[, c(
 #'   "species",
 #'   "length_max",
 #'   "offspring_size"
